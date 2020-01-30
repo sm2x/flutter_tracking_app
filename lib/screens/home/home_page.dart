@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/layouts/drawer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -24,20 +25,19 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tracking App'),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () => {},
-          )
-        ],
-      ),
-      body: Stack(
-        children: <Widget>[_googleMap(context), _buildContainer()],
-      ),
-      drawer: DrawerLayout()
-    );
+        appBar: AppBar(
+          title: Text('Tracking App'),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () => {},
+            )
+          ],
+        ),
+        body: Stack(
+          children: <Widget>[_googleMap(context)],
+        ),
+        drawer: DrawerLayout());
   }
 
   /*
@@ -88,12 +88,18 @@ class _HomePageState extends State<HomePage> {
       width: MediaQuery.of(context).size.width,
       child: GoogleMap(
         mapType: MapType.normal,
-        initialCameraPosition:
-            CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 12),
+        initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 8),
         onMapCreated: (GoogleMapController controler) {
           _controller.complete();
         },
-        markers: {officeMarker, homeMarker, homeMarkerr},
+        markers: {
+          officeMarker,
+          homeMarker,
+          homeMarkerr,
+          deviceMarker,
+          deviceMarker2,
+          deviceMarker3
+        },
       ),
     );
   }
@@ -121,3 +127,25 @@ Marker homeMarkerr = Marker(
   infoWindow: InfoWindow(title: 'Home Marker2'),
   icon: BitmapDescriptor.defaultMarker,
 );
+
+Marker deviceMarker = Marker(
+  markerId: MarkerId(dummyRoutes[0]["deviceId"].toString()),
+  position: LatLng(dummyRoutes[0]["latitude"], dummyRoutes[0]["longitude"]),
+  infoWindow: InfoWindow(title: 'Device'),
+  icon: BitmapDescriptor.defaultMarker,
+);
+Marker deviceMarker2 = Marker(
+  markerId: MarkerId(dummyRoutes[1]["deviceId"].toString()),
+  position: LatLng(dummyRoutes[1]["latitude"], dummyRoutes[1]["longitude"]),
+  infoWindow: InfoWindow(title: 'Device'),
+  icon: BitmapDescriptor.defaultMarker,
+);
+Marker deviceMarker3 = Marker(
+  markerId: MarkerId(dummyRoutes[3]["deviceId"].toString()),
+  position: LatLng(dummyRoutes[3]["latitude"], dummyRoutes[3]["longitude"]),
+  infoWindow: InfoWindow(title: 'Device'),
+  icon: BitmapDescriptor.defaultMarker,
+);
+
+
+//get device routes
