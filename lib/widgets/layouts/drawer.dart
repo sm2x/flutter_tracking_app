@@ -41,6 +41,14 @@ class DrawerLayout extends StatelessWidget {
             Navigator.pushNamed(context, '/Devices');
           },
         ),
+        Divider(),
+        ListTile(
+          leading: Icon(Icons.map),
+          title: Text('Polylines'),
+          onTap: () {
+            Navigator.pushNamed(context, '/TestPolylines');
+          },
+        ),
       ]),
     );
   }

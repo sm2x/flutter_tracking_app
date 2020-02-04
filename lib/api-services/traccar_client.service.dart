@@ -11,19 +11,26 @@ import 'package:http/http.dart' as http;
 class TraccarClientService {
   final _dio = Dio();
 
-  Future getDevicePositionsStream() async {
-    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: true);
+  Future getDevicePositionsStream({int deviceId}) async {
+    return null;
+    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: false);
     unawaited(trac.init());
     await trac.onReady;
 
     /// listen for updates
     final positions = await trac.positions();
     print("Listening for position updates");
-    positions.listen((device) {});
+    positions.listen((device) {
+      if (device.id == deviceId) {
+        // print('---------device------' + device.position.geoPoint.latitude.toString());
+      }
+    },onDone: (){
+      print('Task done1');
+    });
   }
 
   getDevicesStream() async* {
-    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: true);
+    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: false);
     unawaited(trac.init());
     await trac.onReady;
 

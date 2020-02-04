@@ -74,10 +74,10 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       ),
       body: Column(
         children: <Widget>[
-          _deviceInfoWidget(deviceInfo, textColor),
+          // _deviceInfoWidget(deviceInfo, textColor),
           SizedBox(height: 20),
-          // _deviceInfoMapWidget(deviceInfo),
           _renderMap(deviceInfo),
+          _deviceInfoMapWidget(deviceInfo),
         ],
       ),
     );
@@ -180,23 +180,57 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
 
   Widget _renderMap(Device deviceInfo) {
     var latlng = LatLng(33.519971, 73.087819);
+    Map markers = {};
+    MarkerId m1 = MarkerId("1");
+    MarkerId m2 = MarkerId("2");
+    MarkerId m3 = MarkerId("3");
+    MarkerId m4 = MarkerId("4");
+    markers[m1] = Marker(
+      markerId: m1,
+      position: LatLng(33.519971, 73.087819),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+    );
+    markers[m2] = Marker(
+      markerId: m2,
+      position: LatLng(32.097537777777774, 73.06935999999999),
+      icon: BitmapDescriptor.defaultMarker,
+    );
+    markers[m3] = Marker(
+      markerId: m2,
+      position: LatLng(32.098537777777774, 73.06945999999999),
+      icon: BitmapDescriptor.defaultMarker,
+    );
+    markers[m4] = Marker(
+      markerId: m2,
+      position: LatLng(33.674857777777774, 73.01130666666667),
+      icon: BitmapDescriptor.defaultMarker,
+    );
+
     return Expanded(
-      child: Stack(
-        children: <Widget>[
-          Container(
-            decoration: kBoxDecoration1(Theme.of(context).canvasColor),
-            child: GoogleMap(
-              mapType: MapType.normal,
-              initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 6.0),
-              // initialCameraPosition: CameraPosition(target: LatLng(40.6782, -73.9442), zoom: 14.0),
-              onMapCreated: (GoogleMapController controller) {
-                _mapController.complete();
-              },
-              // onMapCreated: onMapCreated,
-              polylines: polyline,
-            ),
-          )
-        ],
+      child: Container(
+        child: Stack(
+          children: <Widget>[
+            Container(
+              decoration: kBoxDecoration1(Theme.of(context).canvasColor),
+              child: GoogleMap(
+                mapType: MapType.normal,
+                initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 7.0),
+                // initialCameraPosition: CameraPosition(target: LatLng(40.6782, -73.9442), zoom: 14.0),
+                onMapCreated: (GoogleMapController controller) {
+                  _mapController.complete();
+                },
+                // onMapCreated: onMapCreated,
+                //polylines: polyline,
+                markers: {
+                  markers[m1],
+                  markers[m2],
+                  markers[m3],
+                },
+                // markers: Set.of(markers.values),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
