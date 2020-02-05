@@ -9,6 +9,8 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
 
+const LatLng SOURCE_LOCATION = LatLng(33.533297, 73.089087);
+
 class DevicePositionScreen extends StatefulWidget {
   @override
   _DevicePositionScreenState createState() => _DevicePositionScreenState();
@@ -21,45 +23,112 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   // GoogleMapController _mapController;
   GoogleMapPolyline googleMapPolyline = new GoogleMapPolyline(apiKey: kGoogleMapsApiKey);
   Map<MarkerId, Marker> markers = new Map<MarkerId, Marker>();
-  Set<Polyline> polyline;
   List<LatLng> routeCoords;
+  LatLng _devicePosition;
+  final List<LatLng> _points = <LatLng>[];
+  Device _deviceInfo;
+  Map<MarkerId, Marker> _markers = {};
+  Map<PolylineId, Polyline> _mapPolylines = {};
+  LatLng lastPosition = LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
+  double _zoomLevel = 7.0;
+  bool _isLoading = false;
+  int _lastHours = 11;
 
   @override
   void initState() {
     super.initState();
-    getaddressPoints();
+  }
+
+  @override
+  void dispose() {
+    _mapPolylines.clear();
+    _markers.clear();
+    _points.clear();
+    super.dispose();
   }
 
   void _onRefresh(Device deviceInfo) async {
-    var data = await TraccarClientService().getDevicePositions(
-      date: DateTime.now(),
-      since: Duration(hours: 12),
-      deviceInfo: deviceInfo,
-    );
-    setState(() {
-      _devices = data;
-    });
+    _getDeviceRoutes(deviceInfo);
     _refreshController.refreshCompleted();
   }
 
   void _onLoading(Device deviceInfo) async {
-    List<Device> data = await TraccarClientService().getDevicePositions(
-      date: DateTime.now(),
-      since: Duration(hours: 5),
-      deviceInfo: deviceInfo,
-    );
-    if (mounted) {
+    _getDeviceRoutes(deviceInfo);
+    _refreshController.loadComplete();
+  }
+
+  //Get device report Routes
+  void _getDeviceRoutes(Device deviceInfo) async {
+    if (_lastHours < 24) {
       setState(() {
-        _devices = data;
+        _isLoading = true;
+      });
+      List<Device> data = await TraccarClientService().getDevicePositions(
+        date: DateTime.now(),
+        since: Duration(hours: _lastHours),
+        deviceInfo: deviceInfo,
+      );
+      if (data.isNotEmpty) {
+        _setPolyLinePoints(data);
+        if (mounted) {
+          setState(() {
+            _devices = data;
+          });
+        }
+      } else {
+        _lastHours += 3;
+        _getDeviceRoutes(deviceInfo);
+        return;
+      }
+      setState(() {
+        _isLoading = false;
       });
     }
-    _refreshController.loadComplete();
+  }
+
+  //Get PolyLine points from routes
+  void _setPolyLinePoints(List<Device> data) {
+    if (data.length > 0) {
+      _points.clear();
+      for (Device route in data) {
+        var position = LatLng(route.position.geoPoint.latitude, route.position.geoPoint.longitude);
+        print(position);
+        _points.add(position);
+        //create polyLine objects
+        PolylineId pId = PolylineId(route.id.toString());
+        Polyline polyline = Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
+        _mapPolylines[pId] = polyline;
+      }
+    }
+    if (_points.isNotEmpty) {
+      lastPosition = _points.last;
+      _setMapMarker(lastPosition);
+      _animateCameraPosition();
+    }
+  }
+
+  //Set Marker for google map
+  void _setMapMarker(LatLng position) {
+    MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
+    Marker deviceMarker = Marker(
+        markerId: deviceMarkerId,
+        position: position,
+        onTap: () {},
+        infoWindow: InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: lastPosition.toString()));
+    _markers[deviceMarkerId] = deviceMarker;
+  }
+
+  //Animate CameraPosition
+  void _animateCameraPosition() async {
+    _zoomLevel = 12.0;
+    GoogleMapController controller = await _mapController.future;
+    controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: lastPosition, zoom: _zoomLevel)));
   }
 
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
-    Device deviceInfo = args["deviceInfo"];
+    _deviceInfo = args["deviceInfo"];
     Color textColor = Theme.of(context).primaryTextTheme.title.color;
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
@@ -74,10 +143,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       ),
       body: Column(
         children: <Widget>[
-          // _deviceInfoWidget(deviceInfo, textColor),
-          SizedBox(height: 20),
-          _renderMap(deviceInfo),
-          _deviceInfoMapWidget(deviceInfo),
+          _deviceInfoWidget(_deviceInfo, textColor),
+          _renderMap(_deviceInfo),
         ],
       ),
     );
@@ -86,7 +153,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   //Device Info Container
   Widget _deviceInfoWidget(Device deviceInfo, Color textColor) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 15),
       child: ListTile(
         leading: Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.white),
@@ -141,94 +208,48 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     );
   }
 
-  //get Coordinates
-  getsomePoints() async {
-    var permissions = await Permission.getPermissionsStatus([PermissionName.Location]);
-    if (permissions[0].permissionStatus == PermissionStatus.notAgain) {
-      var askpermissions = await Permission.requestPermissions([PermissionName.Location]);
-    } else {
-      routeCoords = await googleMapPolyline.getCoordinatesWithLocation(
-          origin: LatLng(40.6782, -73.9442), destination: LatLng(40.6944, -73.9212), mode: RouteMode.driving);
-    }
-  }
-
-  getaddressPoints() async {
-    routeCoords = await googleMapPolyline.getPolylineCoordinatesWithAddress(
-        origin: '55 Kingston Ave, Brooklyn, NY 11213, USA', destination: '178 Broadway, Brooklyn, NY 11211, USA', mode: RouteMode.driving);
-  }
-
-  void onMapCreated(GoogleMapController controller) {
-    setState(() {
-      polyline.add(
-        Polyline(
-          polylineId: PolylineId('route1'),
-          visible: true,
-          points: <LatLng>[
-            LatLng(33.663833333333336, 73.00617333333334),
-            LatLng(33.66353333333333, 73.00292888888889),
-            LatLng(33.66451333333333, 73.00096888888889),
-            LatLng(33.66569111111111, 73.00496),
-          ],
-          width: 4,
-          color: Colors.blue,
-          startCap: Cap.roundCap,
-          endCap: Cap.buttCap,
-        ),
-      );
-    });
-  }
-
   Widget _renderMap(Device deviceInfo) {
-    var latlng = LatLng(33.519971, 73.087819);
-    Map markers = {};
-    MarkerId m1 = MarkerId("1");
-    MarkerId m2 = MarkerId("2");
-    MarkerId m3 = MarkerId("3");
-    MarkerId m4 = MarkerId("4");
-    markers[m1] = Marker(
-      markerId: m1,
-      position: LatLng(33.519971, 73.087819),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
-    );
-    markers[m2] = Marker(
-      markerId: m2,
-      position: LatLng(32.097537777777774, 73.06935999999999),
-      icon: BitmapDescriptor.defaultMarker,
-    );
-    markers[m3] = Marker(
-      markerId: m2,
-      position: LatLng(32.098537777777774, 73.06945999999999),
-      icon: BitmapDescriptor.defaultMarker,
-    );
-    markers[m4] = Marker(
-      markerId: m2,
-      position: LatLng(33.674857777777774, 73.01130666666667),
-      icon: BitmapDescriptor.defaultMarker,
-    );
-
     return Expanded(
       child: Container(
         child: Stack(
           children: <Widget>[
-            Container(
-              decoration: kBoxDecoration1(Theme.of(context).canvasColor),
-              child: GoogleMap(
-                mapType: MapType.normal,
-                initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 7.0),
-                // initialCameraPosition: CameraPosition(target: LatLng(40.6782, -73.9442), zoom: 14.0),
-                onMapCreated: (GoogleMapController controller) {
-                  _mapController.complete();
-                },
-                // onMapCreated: onMapCreated,
-                //polylines: polyline,
-                markers: {
-                  markers[m1],
-                  markers[m2],
-                  markers[m3],
-                },
-                // markers: Set.of(markers.values),
+            GoogleMap(
+              mapType: MapType.normal,
+              initialCameraPosition: CameraPosition(target: lastPosition, zoom: _zoomLevel),
+              onMapCreated: (GoogleMapController controller) {
+                _mapController.complete(controller);
+              },
+              markers: Set<Marker>.of(_markers.values),
+              polylines: Set<Polyline>.of(_mapPolylines.values),
+            ),
+            //Refresh Widget
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                child: GestureDetector(
+                  onTap: () => _onRefresh(deviceInfo),
+                  child: Container(
+                    height: 50,
+                    width: 50,
+                    child: Icon(
+                      Icons.refresh,
+                      color: Colors.white,
+                    ),
+                    decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(30)),
+                  ),
+                ),
               ),
-            )
+            ),
+            _isLoading
+                ? Center(
+                    child: SizedBox(
+                      child: CircularProgressIndicator(strokeWidth: 2.0, backgroundColor: Colors.white),
+                      height: 30,
+                      width: 30,
+                    ),
+                  )
+                : Center(),
           ],
         ),
       ),

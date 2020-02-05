@@ -74,6 +74,9 @@ class TraccarClientService {
     return _devices;
   }
 
+  /**
+   * @description Get Device Routes
+   */
   Future<List<Device>> getDevicePositions({Device deviceInfo, DateTime date, Duration since}) async {
     final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: true);
     unawaited(trac.init());
@@ -103,7 +106,6 @@ class TraccarClientService {
       ),
     );
     print(response.statusCode);
-    print(response.data);
     for (final data in response.data) {
       // _devicePositions.add(Device.fromPosition(data as Map<String, dynamic>));
       _devicePositions.add(DeviceCustomModel.fromJson(data));

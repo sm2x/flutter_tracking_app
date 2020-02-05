@@ -3,6 +3,7 @@ import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 
 void main() => runApp(MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -12,8 +13,8 @@ void main() => runApp(MaterialApp(
 const double CAMERA_ZOOM = 13;
 const double CAMERA_TILT = 0;
 const double CAMERA_BEARING = 30;
-const LatLng SOURCE_LOCATION = LatLng(42.7477863, -71.1699932);
-const LatLng DEST_LOCATION = LatLng(42.6871386, -71.2143403);
+const LatLng SOURCE_LOCATION = LatLng(33.533297, 73.089087);
+const LatLng DEST_LOCATION = LatLng(33.609932, 73.044615);
 
 class MapPage extends StatefulWidget {
   @override
@@ -21,245 +22,90 @@ class MapPage extends StatefulWidget {
 }
 
 class MapPageState extends State<MapPage> {
-  Completer<GoogleMapController> _controller = Completer();
-  // this set will hold my markers
-  Set<Marker> _markers = {};
-  // this will hold the generated polylines
-  Set<Polyline> _polylines = {};
-  // this will hold each polyline coordinate as Lat and Lng pairs
-  List<LatLng> polylineCoordinates = [];
-  // this is the key object - the PolylinePoints
-  // which generates every polyline between start and finish
-  PolylinePoints polylinePoints = PolylinePoints();
-  String googleAPIKey = kGoogleMapsApiKey;
-  // for my custom icons
-  BitmapDescriptor sourceIcon;
-  BitmapDescriptor destinationIcon;
+  Map<PolylineId, Polyline> _mapPolylines = {};
+  int _polylineIdCounter = 0;
+  LocationData _currentLocation;
+  LocationData _destinationLocation;
+  Location _location;
+  Map<MarkerId, Marker> _mapMarkers = {};
+  final List<LatLng> points = <LatLng>[];
 
-  @override
   void initState() {
     super.initState();
-    setSourceAndDestinationIcons();
+    _location = new Location();
+    initMarker();
+    _createPoints();
   }
 
-  void setSourceAndDestinationIcons() async {
-    sourceIcon = BitmapDescriptor.defaultMarker;
-    destinationIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+  void setInitialLocation() async {
+    _currentLocation = await _location.getLocation();
+    _destinationLocation = LocationData.fromMap({"longitude": SOURCE_LOCATION.longitude, "latitude": SOURCE_LOCATION.latitude});
+  }
+
+  void initMarker() {
+    _mapMarkers.clear();
+    final MarkerId markerId = MarkerId('marker_$_polylineIdCounter');
+    var position = LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
+    BitmapDescriptor m1 = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+    final Marker marker = Marker(markerId: markerId, position: position, icon: m1);
+    _mapMarkers[markerId] = marker;
+  }
+
+  void _add() async {
+    if (_polylineIdCounter < points.length) {
+      _mapPolylines.clear();
+      _mapMarkers.clear();
+      final String polylineIdVal = 'polyline_id_$_polylineIdCounter';
+
+      //Polylines
+      final PolylineId polylineId = PolylineId(polylineIdVal);
+      final Polyline polyline = Polyline(
+        polylineId: polylineId,
+        consumeTapEvents: true,
+        color: Colors.blue,
+        width: 3,
+        points: points,
+      );
+
+      //on Adding displacing marker position
+      final MarkerId markerId = MarkerId('marker_$_polylineIdCounter');
+      var position = points[_polylineIdCounter];
+      BitmapDescriptor markerIcon =
+          await BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5), 'assets/images/source_marker1.png');
+      BitmapDescriptor m1 = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
+      final Marker marker = Marker(markerId: markerId, position: position, icon: m1);
+
+      _polylineIdCounter++;
+
+      setState(() {
+        _mapPolylines[polylineId] = polyline;
+        _mapMarkers[markerId] = marker;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    CameraPosition initialLocation = CameraPosition(zoom: CAMERA_ZOOM, bearing: CAMERA_BEARING, tilt: CAMERA_TILT, target: SOURCE_LOCATION);
-    return GoogleMap(
-        myLocationEnabled: true,
-        compassEnabled: true,
-        tiltGesturesEnabled: false,
-        markers: _markers,
-        polylines: _polylines,
-        mapType: MapType.normal,
-        initialCameraPosition: initialLocation,
-        onMapCreated: onMapCreated);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Maps"),
+        actions: <Widget>[IconButton(icon: Icon(Icons.add), onPressed: _add)],
+      ),
+      body: GoogleMap(
+          initialCameraPosition: const CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 10.0),
+          polylines: Set<Polyline>.of(_mapPolylines.values),
+          markers: Set<Marker>.of(_mapMarkers.values)),
+    );
   }
 
-  void onMapCreated(GoogleMapController controller) {
-    controller.setMapStyle(Utils.mapStyles);
-    _controller.complete(controller);
-    setMapPins();
-    setPolylines();
+  List<LatLng> _createPoints() {
+    points.add(LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude));
+    points.add(LatLng(33.555785, 73.093280));
+    points.add(LatLng(33.559939, 73.087996));
+    points.add(LatLng(33.565543, 73.078087));
+    points.add(LatLng(33.579903, 73.069860));
+    points.add(LatLng(33.585756, 73.063375));
+    points.add(LatLng(33.589208, 73.056769));
+    points.add(LatLng(DEST_LOCATION.latitude, DEST_LOCATION.longitude));
   }
-
-  void setMapPins() {
-    setState(() {
-      // source pin
-      _markers.add(Marker(markerId: MarkerId('sourcePin'), position: SOURCE_LOCATION, icon: sourceIcon));
-      // destination pin
-      _markers.add(Marker(markerId: MarkerId('destPin'), position: DEST_LOCATION, icon: destinationIcon));
-    });
-  }
-
-  setPolylines() async {
-    List<PointLatLng> result = await polylinePoints?.getRouteBetweenCoordinates(
-        googleAPIKey, SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude, DEST_LOCATION.latitude, DEST_LOCATION.longitude);
-    if (result.isNotEmpty) {
-      // loop through all PointLatLng points and convert them
-      // to a list of LatLng, required by the Polyline
-      result.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-    }
-
-    setState(() {
-      // create a Polyline instance
-      // with an id, an RGB color and the list of LatLng pairs
-      Polyline polyline = Polyline(polylineId: PolylineId("poly"), color: Color.fromARGB(255, 40, 122, 198), points: polylineCoordinates);
-
-      // add the constructed polyline as a set of points
-      // to the polyline set, which will eventually
-      // end up showing up on the map
-      _polylines.add(polyline);
-    });
-  }
-}
-
-class Utils {
-  static String mapStyles = '''[
-  {
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#f5f5f5"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#f5f5f5"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#bdbdbd"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#eeeeee"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e5e5e5"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#ffffff"
-      }
-    ]
-  },
-  {
-    "featureType": "road.arterial",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dadada"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e5e5e5"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.station",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#eeeeee"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#c9c9c9"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  }
-]''';
 }
