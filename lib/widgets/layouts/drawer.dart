@@ -38,6 +38,7 @@ class DrawerLayout extends StatelessWidget {
           leading: Icon(Icons.track_changes),
           title: Text('My Devices'),
           onTap: () {
+            Navigator.pop(context);
             Navigator.pushNamed(context, '/Devices');
           },
         ),
@@ -46,6 +47,7 @@ class DrawerLayout extends StatelessWidget {
           leading: Icon(Icons.map),
           title: Text('Polylines'),
           onTap: () {
+            Navigator.pop(context);
             Navigator.pushNamed(context, '/TestPolylines');
           },
         ),

@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
 import 'package:flutter_tracking_app/models/user.model.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
+import 'package:flutter_tracking_app/screens/home/devices.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/layouts/drawer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/home/boxes.dart';
@@ -44,7 +46,9 @@ class _HomePageState extends State<HomePage> {
         body: Stack(
           children: <Widget>[
             _googleMap(context),
-            _allDevices(),
+            _optionsListView(),
+            _mapButtonWidget(),
+            _gpsButtonWidget(),
           ],
         ),
         drawer: DrawerLayout());
@@ -136,6 +140,105 @@ class _HomePageState extends State<HomePage> {
             leading: Icon(Icons.local_shipping),
             title: Text('All Devices'),
             trailing: Icon(Icons.arrow_right),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // options tabs listView Widget //
+  Widget _optionsListView() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, DevicesScreen.route),
+            child: Container(
+              height: 35,
+              width: 100,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+                BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+                BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+              ]),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Icon(Icons.local_shipping),
+                    Text(
+                      'Devices',
+                      style: GoogleFonts.roboto(letterSpacing: 0.5, fontWeight: FontWeight.w500),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, DevicesScreen.route),
+            child: Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+                BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+                BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+              ]),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                child: Center(child: Icon(Icons.search)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mapButtonWidget() {
+    return Positioned(
+      top: 50,
+      right: 5,
+      child: // maps icon
+          GestureDetector(
+        onTap: () => Navigator.pushNamed(context, DevicesScreen.route),
+        child: Container(
+          height: 40,
+          width: 40,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+          ]),
+          child: Center(
+            child: Icon(Icons.map),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _gpsButtonWidget() {
+    return Positioned(
+      bottom: 80,
+      right: 5,
+      child: // maps icon
+          GestureDetector(
+        onTap: () => Navigator.pushNamed(context, DevicesScreen.route),
+        child: Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
+            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+          ]),
+          child: Center(
+            child: Icon(
+              Icons.location_searching,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),

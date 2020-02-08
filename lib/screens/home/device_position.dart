@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
+import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:permission/permission.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
@@ -89,6 +92,9 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   void _onLoading(DeviceCustomModel deviceInfo) async {
     _lastHours = _initialHours;
     _getDeviceRoutes(deviceInfo);
+    if (_routesList.isNotEmpty) {
+      _animateCameraPosition();
+    }
     _refreshController.loadComplete();
   }
 
@@ -155,37 +161,58 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     if (_points.isNotEmpty) {
       lastPosition = _points.last;
       _setMapMarker(lastPosition);
-      _animateCameraPosition();
     }
   }
 
+  Future<Uint8List> getMarker() async {
+    String imgAsset = CommonFunctions.getMapIconImageAsset(category: _deviceInfo.category.toString());
+    ByteData byteData = await DefaultAssetBundle.of(context).load(imgAsset);
+    return byteData.buffer.asUint8List();
+  }
+
   //Set Marker for google map
-  void _setMapMarker(LatLng position) {
+  void _setMapMarker(LatLng position) async {
+    Uint8List imageData = await getMarker();
+    var pinLocationIcon = BitmapDescriptor.fromBytes(imageData);
+
+    print(_deviceInfo.category);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
-        markerId: deviceMarkerId,
-        position: position,
-        onTap: () {},
-        infoWindow: InfoWindow(
-          title: _deviceInfo.name.toString(),
-          anchor: Offset(0.5, 0.5),
-          snippet: _routesList.isNotEmpty ? _routesList.last.position.date.toString() : _deviceInfo.lastUpdate.toString(),
-        ));
+      markerId: deviceMarkerId,
+      position: position,
+      onTap: () {},
+      infoWindow: InfoWindow(
+        title: _deviceInfo.name.toString(),
+        anchor: Offset(0.5, 0.5),
+        snippet: _routesList.isNotEmpty ? _routesList.last.position.date.toString() : _deviceInfo.lastUpdate.toString(),
+      ),
+      icon: pinLocationIcon,
+      zIndex: 2,
+      anchor: Offset(0.5, 0.5),
+      rotation: 38.0,
+    );
     _markers[deviceMarkerId] = deviceMarker;
   }
 
-  void _setMapMarkerByStream(DeviceCustomModel device) {
+  // Marker set by Stream //
+  void _setMapMarkerByStream(DeviceCustomModel device) async {
+    Uint8List imageData = await getMarker();
+    var pinLocationIcon = BitmapDescriptor.fromBytes(imageData);
     var position = LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
-        markerId: deviceMarkerId,
-        position: position,
-        onTap: () {},
-        infoWindow: InfoWindow(
-          title: _deviceInfo.name.toString(),
-          anchor: Offset(0.5, 0.5),
-          snippet: device.position.date.toString(),
-        ));
+      markerId: deviceMarkerId,
+      position: position,
+      onTap: () {},
+      infoWindow: InfoWindow(
+        title: _deviceInfo.name.toString(),
+        anchor: Offset(0.5, 0.5),
+        snippet: _routesList.isNotEmpty ? _routesList.last.position.date.toString() : _deviceInfo.lastUpdate.toString(),
+      ),
+      icon: pinLocationIcon,
+      zIndex: 2,
+      anchor: Offset(0.5, 0.5),
+    );
     _markers[deviceMarkerId] = deviceMarker;
   }
 
@@ -194,6 +221,27 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     _zoomLevel = 11.0;
     GoogleMapController controller = await _mapController.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: lastPosition, zoom: _zoomLevel)));
+  }
+
+  // Create AlertDialog
+  Future<void> createAlertDialog(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return CupertinoAlertDialog(
+            title: Text('Apply Filters'),
+            // titleTextStyle: GoogleFonts.openSans(letterSpacing: 0.5, fontWeight: FontWeight.bold),
+            content: Text('content here'),
+            actions: <Widget>[
+              MaterialButton(
+                onPressed: () {},
+                elevation: 5.0,
+                child: Text('Submit'),
+              ),
+              MaterialButton(elevation: 5.0, child: Text('Close'), onPressed: () => Navigator.pop(context)),
+            ],
+          );
+        });
   }
 
   // Build Method //
@@ -230,16 +278,20 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                   '   ' +
                   data.device.id.toString() +
                   ' ' +
-                  data.position.date.toString());
+                  data.position.date.toString() +
+                  ' ' +
+                  data.position.geoPoint.heading.toString());
               _setMapMarkerByStream(data);
               // setState(() {});
               // _animateCameraPosition();
-              return Column(
-                children: <Widget>[
-                  _deviceInfoWidget(_deviceInfo, textColor),
-                  _renderMap(_deviceInfo),
-                ],
-              );
+              if (_mapController.isCompleted) {
+                return Column(
+                  children: <Widget>[
+                    _deviceInfoWidget(_deviceInfo, textColor),
+                    _renderMap(_deviceInfo),
+                  ],
+                );
+              }
             }
           }
           return Column(
@@ -290,41 +342,82 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                 if (!_mapController.isCompleted) {
                   _mapController.complete(controller);
                   await _getDevicePosition();
-                  _getDeviceRoutes(deviceInfo);
+                  // _getDeviceRoutes(deviceInfo);
+                  _onLoading(deviceInfo);
                 }
               },
               markers: Set<Marker>.of(_markers.values),
               polylines: Set<Polyline>.of(_mapPolylines.values),
             ),
             //Refresh Widget
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                child: GestureDetector(
-                  onTap: () => _onRefresh(deviceInfo),
-                  child: Container(
-                    height: 50,
-                    width: 50,
-                    child: Icon(
-                      Icons.refresh,
-                      color: Colors.white,
-                    ),
-                    decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(30)),
-                  ),
-                ),
-              ),
-            ),
-            _isLoading
-                ? Center(
-                    child: SizedBox(
-                      child: CircularProgressIndicator(strokeWidth: 2.0, backgroundColor: Colors.white),
-                      height: 30,
-                      width: 30,
-                    ),
-                  )
-                : Center(),
+            _refreshButtonOnMap(deviceInfo),
+            _loaderOnMap(),
+            _filtersButton(),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Refresh Button Widget
+  Widget _refreshButtonOnMap(deviceInfo) {
+    return Positioned(
+      top: 10,
+      right: 10,
+      child: GestureDetector(
+        onTap: () => _onRefresh(deviceInfo),
+        child: Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(30)),
+          child: Center(
+            child: Icon(
+              Icons.refresh,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Loader on Map //
+  Widget _loaderOnMap() {
+    return _isLoading
+        ? Center(
+            child: SizedBox(
+              child: CircularProgressIndicator(strokeWidth: 2.0, backgroundColor: Colors.white),
+              height: 30,
+              width: 30,
+            ),
+          )
+        : Center();
+  }
+
+  // Filters Button //
+  Widget _filtersButton() {
+    return Positioned(
+      top: 70,
+      right: 10,
+      child: GestureDetector(
+        onTap: () {
+          print('filters');
+          createAlertDialog(context);
+        },
+        child: Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
+            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
+          ]),
+          child: Center(
+            child: Icon(
+              Icons.filter_list,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
         ),
       ),
     );
