@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
+import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission/permission.dart';
@@ -24,19 +25,27 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   GoogleMapPolyline googleMapPolyline = new GoogleMapPolyline(apiKey: kGoogleMapsApiKey);
   Map<MarkerId, Marker> markers = new Map<MarkerId, Marker>();
   List<LatLng> routeCoords;
-  LatLng _devicePosition;
   final List<LatLng> _points = <LatLng>[];
-  Device _deviceInfo;
+  final List<Device> _routesList = <Device>[];
+  DeviceCustomModel _deviceInfo;
   Map<MarkerId, Marker> _markers = {};
   Map<PolylineId, Polyline> _mapPolylines = {};
   LatLng lastPosition = LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
   double _zoomLevel = 7.0;
   bool _isLoading = false;
-  int _lastHours = 11;
+  int _initialHours = 3;
+  int _lastHours = 3;
+  GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(DevicePositionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    setState(() {});
   }
 
   @override
@@ -47,23 +56,49 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     super.dispose();
   }
 
-  void _onRefresh(Device deviceInfo) async {
+  //Get device position against positionId
+  Future<DevicePosition> _getDevicePosition() async {
+    DevicePosition data;
+    if (_deviceInfo.positionId != null) {
+      print(_deviceInfo.positionId);
+      try {
+        setState(() => _isLoading = true);
+        data = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
+        if (data != null) {
+          lastPosition = LatLng(data.geoPoint.latitude, data.geoPoint.longitude);
+          _setMapMarker(lastPosition);
+          _animateCameraPosition();
+          setState(() {});
+        }
+      } catch (error) {
+        _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(error.toString()), duration: Duration(seconds: 3)));
+      }
+    } else {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
+    }
+    setState(() => _isLoading = false);
+    return data;
+  }
+
+  void _onRefresh(DeviceCustomModel deviceInfo) async {
+    _lastHours = _initialHours;
     _getDeviceRoutes(deviceInfo);
     _refreshController.refreshCompleted();
   }
 
-  void _onLoading(Device deviceInfo) async {
+  void _onLoading(DeviceCustomModel deviceInfo) async {
+    _lastHours = _initialHours;
     _getDeviceRoutes(deviceInfo);
     _refreshController.loadComplete();
   }
 
   //Get device report Routes
-  void _getDeviceRoutes(Device deviceInfo) async {
+  void _getDeviceRoutes(DeviceCustomModel deviceInfo) async {
     if (_lastHours < 24) {
       setState(() {
         _isLoading = true;
       });
-      List<Device> data = await TraccarClientService().getDevicePositions(
+      List<Device> data = await TraccarClientService().getDeviceRoutes(
         date: DateTime.now(),
         since: Duration(hours: _lastHours),
         deviceInfo: deviceInfo,
@@ -83,6 +118,12 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       setState(() {
         _isLoading = false;
       });
+    } else {
+      setState(() => _isLoading = false);
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text("No Activity Since $_lastHours hrs"),
+        duration: Duration(seconds: 3),
+      ));
     }
   }
 
@@ -90,15 +131,26 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   void _setPolyLinePoints(List<Device> data) {
     if (data.length > 0) {
       _points.clear();
+      _routesList.clear();
+      // Reducing routes List //
+      if (data.length > kRoutePointsLimit) {
+        for (var i = 0; i < data.length; i++) {
+          if (data.length > kRoutePointsLimit) {
+            data.removeAt(0);
+          }
+        }
+      }
       for (Device route in data) {
         var position = LatLng(route.position.geoPoint.latitude, route.position.geoPoint.longitude);
-        print(position);
+        // print(position);
         _points.add(position);
-        //create polyLine objects
+        _routesList.add(route);
+        // create polyLine objects
         PolylineId pId = PolylineId(route.id.toString());
         Polyline polyline = Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
         _mapPolylines[pId] = polyline;
       }
+      print(_mapPolylines.length.toString());
     }
     if (_points.isNotEmpty) {
       lastPosition = _points.last;
@@ -114,23 +166,44 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         markerId: deviceMarkerId,
         position: position,
         onTap: () {},
-        infoWindow: InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: lastPosition.toString()));
+        infoWindow: InfoWindow(
+          title: _deviceInfo.name.toString(),
+          anchor: Offset(0.5, 0.5),
+          snippet: _routesList.isNotEmpty ? _routesList.last.position.date.toString() : _deviceInfo.lastUpdate.toString(),
+        ));
+    _markers[deviceMarkerId] = deviceMarker;
+  }
+
+  void _setMapMarkerByStream(DeviceCustomModel device) {
+    var position = LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude);
+    MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
+    Marker deviceMarker = Marker(
+        markerId: deviceMarkerId,
+        position: position,
+        onTap: () {},
+        infoWindow: InfoWindow(
+          title: _deviceInfo.name.toString(),
+          anchor: Offset(0.5, 0.5),
+          snippet: device.position.date.toString(),
+        ));
     _markers[deviceMarkerId] = deviceMarker;
   }
 
   //Animate CameraPosition
   void _animateCameraPosition() async {
-    _zoomLevel = 12.0;
+    _zoomLevel = 11.0;
     GoogleMapController controller = await _mapController.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: lastPosition, zoom: _zoomLevel)));
   }
 
+  // Build Method //
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
     _deviceInfo = args["deviceInfo"];
     Color textColor = Theme.of(context).primaryTextTheme.title.color;
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
         elevation: 0,
@@ -141,17 +214,47 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         title: Text('Device Position'),
         centerTitle: true,
       ),
-      body: Column(
-        children: <Widget>[
-          _deviceInfoWidget(_deviceInfo, textColor),
-          _renderMap(_deviceInfo),
-        ],
+      body: StreamBuilder(
+        stream: TraccarClientService().getDevicePositionsStream,
+        builder: (BuildContext context, AsyncSnapshot snapShot) {
+          if (snapShot.hasData) {
+            DeviceCustomModel data = snapShot.data;
+            if (data.device.id == _deviceInfo.id) {
+              LatLng position = LatLng(data.position.geoPoint.latitude, data.position.geoPoint.longitude);
+              var text = data.id.toString() + '   ' + data.position.geoPoint.latitude.toString() + '  ' + data.device.id.toString();
+              print(data.id.toString() +
+                  '  ' +
+                  data.position.totalDistance.toString() +
+                  '   ' +
+                  position.toString() +
+                  '   ' +
+                  data.device.id.toString() +
+                  ' ' +
+                  data.position.date.toString());
+              _setMapMarkerByStream(data);
+              // setState(() {});
+              // _animateCameraPosition();
+              return Column(
+                children: <Widget>[
+                  _deviceInfoWidget(_deviceInfo, textColor),
+                  _renderMap(_deviceInfo),
+                ],
+              );
+            }
+          }
+          return Column(
+            children: <Widget>[
+              _deviceInfoWidget(_deviceInfo, textColor),
+              _renderMap(_deviceInfo),
+            ],
+          );
+        },
       ),
     );
   }
 
   //Device Info Container
-  Widget _deviceInfoWidget(Device deviceInfo, Color textColor) {
+  Widget _deviceInfoWidget(DeviceCustomModel deviceInfo, Color textColor) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15),
       child: ListTile(
@@ -174,41 +277,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     );
   }
 
-  //Device Map Container
-  Widget _deviceInfoMapWidget(Device deviceInfo) {
-    return Expanded(
-      child: Container(
-        decoration: kBoxDecoration1(Theme.of(context).canvasColor),
-        width: MediaQuery.of(context).size.width,
-        child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            child: SmartRefresher(
-              controller: _refreshController,
-              enablePullDown: true,
-              enablePullUp: false,
-              onRefresh: () => _onRefresh(deviceInfo),
-              onLoading: () => _onLoading(deviceInfo),
-              child: ListView.builder(
-                  itemCount: _devices.length,
-                  itemBuilder: (context, index) {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text(
-                          _devices[index].position.geoPoint.latitude.toString(),
-                        ),
-                        Text(
-                          _devices[index].position.geoPoint.longitude.toString(),
-                        )
-                      ],
-                    );
-                  }),
-            )),
-      ),
-    );
-  }
-
-  Widget _renderMap(Device deviceInfo) {
+  // Google Map //
+  Widget _renderMap(DeviceCustomModel deviceInfo) {
     return Expanded(
       child: Container(
         child: Stack(
@@ -216,8 +286,12 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             GoogleMap(
               mapType: MapType.normal,
               initialCameraPosition: CameraPosition(target: lastPosition, zoom: _zoomLevel),
-              onMapCreated: (GoogleMapController controller) {
-                _mapController.complete(controller);
+              onMapCreated: (GoogleMapController controller) async {
+                if (!_mapController.isCompleted) {
+                  _mapController.complete(controller);
+                  await _getDevicePosition();
+                  _getDeviceRoutes(deviceInfo);
+                }
               },
               markers: Set<Marker>.of(_markers.values),
               polylines: Set<Polyline>.of(_mapPolylines.values),

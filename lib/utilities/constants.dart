@@ -20,3 +20,7 @@ BoxDecoration kBoxDecoration1(Color color) => BoxDecoration(
 
 //google maps api-key
 const kGoogleMapsApiKey = "AIzaSyBXr9t0F7gkAedIJLC2pIn_sae1iGSDLmM";
+
+const kLocalStorageKey = "tracking_app";
+const kCookieKey = "traccarCookie";
+const kRoutePointsLimit = 100;

@@ -1,4 +1,6 @@
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
+import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
@@ -29,6 +31,7 @@ class MapPageState extends State<MapPage> {
   Location _location;
   Map<MarkerId, Marker> _mapMarkers = {};
   final List<LatLng> points = <LatLng>[];
+  Completer<GoogleMapController> _mapController = Completer();
 
   void initState() {
     super.initState();
@@ -84,17 +87,42 @@ class MapPageState extends State<MapPage> {
     }
   }
 
+  //Build Method//
   @override
   Widget build(BuildContext context) {
+    var text = '';
     return Scaffold(
       appBar: AppBar(
         title: Text("Maps"),
         actions: <Widget>[IconButton(icon: Icon(Icons.add), onPressed: _add)],
       ),
-      body: GoogleMap(
-          initialCameraPosition: const CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 10.0),
-          polylines: Set<Polyline>.of(_mapPolylines.values),
-          markers: Set<Marker>.of(_mapMarkers.values)),
+      body:
+          /* GoogleMap(
+        initialCameraPosition: const CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 10.0),
+        polylines: Set<Polyline>.of(_mapPolylines.values),
+        markers: Set<Marker>.of(_mapMarkers.values),
+        onMapCreated: (GoogleMapController controller) {
+          _mapController.complete(controller);
+          TraccarClientService().getDevicePositionsStream();
+        },
+      ), */
+          StreamBuilder(
+        stream: TraccarClientService().getDevicePositionsStream,
+        builder: (BuildContext context, AsyncSnapshot snapShot) {
+          if (snapShot.hasData) {
+            DeviceCustomModel data = snapShot.data;
+            text = data.id.toString() + '   ' + data.position.geoPoint.latitude.toString() + '  ' + data.device.id.toString();
+            print(data.id.toString() +
+                '  ' +
+                data.position.totalDistance.toString() +
+                '   ' +
+                data.position.geoPoint.latitude.toString() +
+                '   ' +
+                data.device.id.toString());
+            return Text(text);
+          }
+        },
+      ),
     );
   }
 
@@ -108,4 +136,8 @@ class MapPageState extends State<MapPage> {
     points.add(LatLng(33.589208, 73.056769));
     points.add(LatLng(DEST_LOCATION.latitude, DEST_LOCATION.longitude));
   }
+
+  //Websocket Channel
+
+  //Get Stream from webSocket
 }

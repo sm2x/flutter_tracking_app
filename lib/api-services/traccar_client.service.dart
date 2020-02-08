@@ -1,86 +1,104 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
+import 'package:flutter_tracking_app/utilities/constants.dart';
+import 'package:localstorage/localstorage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/io.dart';
 
 class TraccarClientService {
   final _dio = Dio();
 
-  Future getDevicePositionsStream({int deviceId}) async {
-    return null;
-    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: false);
-    unawaited(trac.init());
-    await trac.onReady;
-
-    /// listen for updates
-    final positions = await trac.positions();
-    print("Listening for position updates");
-    positions.listen((device) {
-      if (device.id == deviceId) {
-        // print('---------device------' + device.position.geoPoint.latitude.toString());
+  /*
+   * @description Listen device-positions Stream emmitting by Websocket
+   */
+  Stream<Device> get getDevicePositionsStream {
+    String cookie = "JSESSIONID=djwbu6ve4icrh0hxejgbgxni; path=/api;";
+    final channel = IOWebSocketChannel.connect("ws://$serverUrl/api/socket", headers: {"Cookie": cookie});
+    final posStream = channel.stream;
+    StreamSubscription<dynamic> rawPosSub;
+    final streamController = StreamController<Device>.broadcast();
+    rawPosSub = posStream.listen((dynamic data) {
+      final dataMap = jsonDecode(data.toString()) as Map<String, dynamic>;
+      if (dataMap.containsKey("positions")) {
+        // print(dataMap);
+        DevicePosition pos;
+        DeviceCustomModel device;
+        for (final posMap in dataMap["positions"]) {
+          pos = DevicePosition.fromJson(posMap as Map<String, dynamic>);
+          //device = Device.fromPosition(posMap as Map<String, dynamic>);
+          device = DeviceCustomModel.fromJson(posMap);
+        }
+        device.position = pos;
+        streamController.sink.add(device);
       }
-    },onDone: (){
-      print('Task done1');
     });
+    return streamController.stream;
+    // return posStream;
   }
 
-  getDevicesStream() async* {
-    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: false);
-    unawaited(trac.init());
-    await trac.onReady;
-
-    /// listen for updates
-    final positions = await trac.positions();
-    print("Listening for position updates");
-    positions.listen((device) {
-      if (device.id == 509) {
-        print("POSITION UPDATE: $device");
-        // print("${device.name}: ${device.position.geoPoint.latitude} / " + "${device.position.geoPoint.longitude}");
-      }
-      return device;
-    });
-    // yield positions;
-  }
-
-  //Get Devices
+  // Get All Devices of current User //
   Future<List<Device>> getDevices() async {
-    List<Device> _devices;
-    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: false);
-    unawaited(trac.init());
-    await trac.onReady;
-    await trac.query.devices().then((List<Device> devices) {
-      _devices = devices;
-    });
-    return _devices;
+    String cookie = await getCookie();
+    String uri = "$serverProtocol$serverUrl/api/devices";
+    var response = await Dio().get(
+      uri,
+      options: Options(
+        contentType: ContentType.json,
+        headers: <String, dynamic>{
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Cookie": cookie,
+        },
+      ),
+    );
+    if (response.statusCode == 200) {
+      final devices = <DeviceCustomModel>[];
+      for (final data in response.data) {
+        // print(data);
+        var item = DeviceCustomModel.fromJson(data as Map<String, dynamic>);
+        devices.add(item);
+      }
+      return devices;
+    } else {
+      throw Exception("Unexpected Happened !");
+    }
   }
 
-  //Get Device positions
-  Future<List<Device>> getDevicePositions1(Device deviceInfo) async {
-    List<Device> _devices;
+  // Get Api Cookie //
+  static Future<String> getCookie() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    String cookie = sharedPreferences.getString(kCookieKey);
+    if (cookie == null) {
+      final trac = await getTraccarInstance();
+      cookie = trac.query.cookie;
+      sharedPreferences.setString(kCookieKey, cookie);
+    }
+    return cookie;
+  }
+
+  /*
+   * @description Get Traccar Instance
+   */
+  static Future<Traccar> getTraccarInstance() async {
     final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: true);
     unawaited(trac.init());
     await trac.onReady;
-    _devices = await trac.query.positions(
-      deviceId: deviceInfo.id.toString(),
-      since: Duration(days: 1),
-      date: DateTime.now(),
-    );
-    print(_devices);
-    return _devices;
+    return trac;
   }
 
-  /**
+  /*
    * @description Get Device Routes
    */
-  Future<List<Device>> getDevicePositions({Device deviceInfo, DateTime date, Duration since}) async {
-    final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: true);
-    unawaited(trac.init());
-    await trac.onReady;
+  Future<List<Device>> getDeviceRoutes({DeviceCustomModel deviceInfo, DateTime date, Duration since}) async {
+    String cookie = await getCookie();
     List<Device> _devicePositions = [];
     String uri = "$serverProtocol$serverUrl/api/reports/route";
     final deviceId = deviceInfo.id.toString();
@@ -91,32 +109,50 @@ class TraccarClientService {
       "from": _formatDate(fromDate),
       "to": _formatDate(date),
     };
-    print(uri);
-    print(queryParameters);
-    print(trac.query.cookie);
     var response = await _dio.get(
+      uri,
+      queryParameters: queryParameters,
+      options: Options(contentType: ContentType.json, headers: <String, dynamic>{
+        "Accept": "application/json",
+        "Cookie": cookie,
+      }),
+    );
+    print(response);
+    for (final data in response.data) {
+      _devicePositions.add(DeviceCustomModel.fromJson(data));
+    }
+    return _devicePositions;
+  }
+
+  // @description date conversion //
+  String _formatDate(DateTime date) {
+    final d = date.toIso8601String().split(".")[0];
+    final l = d.split(":");
+    return "${l[0]}:${l[1]}:00Z";
+  }
+
+  // @description Get SinglePosition
+  static Future<DevicePosition> getPositionFromId({int positionId}) async {
+    String cookie = await getCookie();
+    String uri = "$serverProtocol$serverUrl/api/positions";
+    final queryParameters = <String, dynamic>{"id": positionId};
+    var response = await Dio().get(
       uri,
       queryParameters: queryParameters,
       options: Options(
         contentType: ContentType.json,
         headers: <String, dynamic>{
           "Accept": "application/json",
-          "Cookie": trac.query.cookie,
+          "Content-Type": "application/json",
+          "Cookie": cookie,
         },
       ),
     );
-    print(response.statusCode);
-    for (final data in response.data) {
-      // _devicePositions.add(Device.fromPosition(data as Map<String, dynamic>));
-      _devicePositions.add(DeviceCustomModel.fromJson(data));
+    if (response.statusCode == 200) {
+      DevicePosition devicePosition = DevicePosition.fromJson(response.data[0]);
+      return devicePosition;
+    } else {
+      throw Exception("Unexpected Happened !");
     }
-
-    return _devicePositions;
-  }
-
-  String _formatDate(DateTime date) {
-    final d = date.toIso8601String().split(".")[0];
-    final l = d.split(":");
-    return "${l[0]}:${l[1]}:00Z";
   }
 }
