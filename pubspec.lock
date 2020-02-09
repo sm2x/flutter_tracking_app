@@ -350,6 +350,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.2.1"
+  sms:
+    dependency: "direct main"
+    description:
+      name: sms
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.4"
+  snapping_sheet:
+    dependency: "direct main"
+    description:
+      name: snapping_sheet
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.1"
   source_span:
     dependency: transitive
     description:

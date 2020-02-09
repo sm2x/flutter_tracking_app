@@ -132,7 +132,7 @@ class TraccarClientService {
   }
 
   // @description Get SinglePosition
-  static Future<DevicePosition> getPositionFromId({int positionId}) async {
+  static Future<DeviceCustomModel> getPositionFromId({int positionId}) async {
     String cookie = await getCookie();
     String uri = "$serverProtocol$serverUrl/api/positions";
     final queryParameters = <String, dynamic>{"id": positionId};
@@ -149,7 +149,7 @@ class TraccarClientService {
       ),
     );
     if (response.statusCode == 200) {
-      DevicePosition devicePosition = DevicePosition.fromJson(response.data[0]);
+      DeviceCustomModel devicePosition = DeviceCustomModel.fromJson(response.data[0]);
       return devicePosition;
     } else {
       throw Exception("Unexpected Happened !");

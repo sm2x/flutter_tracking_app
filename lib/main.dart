@@ -6,8 +6,11 @@ import 'package:flutter_tracking_app/screens/home/test_polylines.dart';
 import 'package:provider/provider.dart';
 import './screens/home/home_page.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:sms/sms.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   final _appProvider = AppProvider();

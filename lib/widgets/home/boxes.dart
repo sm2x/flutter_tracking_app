@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Boxes extends StatelessWidget {
@@ -9,8 +11,9 @@ class Boxes extends StatelessWidget {
   final double lat;
   final double long;
   final String resturantName;
+  final DeviceCustomModel device;
   final Completer<GoogleMapController> _controller = Completer();
-  Boxes(this._image, this.lat, this.long, this.resturantName);
+  Boxes(this._image, this.lat, this.long, this.resturantName, this.device);
 
   //Future functions
   Future<void> _gotoLocation(double lat, double long) async {
@@ -26,9 +29,7 @@ class Boxes extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        _gotoLocation(lat, long);
-      },
+      onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": device}),
       child: Container(
         child: new FittedBox(
           child: Material(
@@ -46,7 +47,7 @@ class Boxes extends StatelessWidget {
                       borderRadius: new BorderRadius.circular(24.0),
                       child: Image(
                         fit: BoxFit.fill,
-                        image: NetworkImage(_image),
+                        image: AssetImage(_image),
                       ),
                     ),
                   ),
@@ -73,78 +74,35 @@ class Boxes extends StatelessWidget {
           child: Container(
               child: Text(
             restaurantName,
-            style: TextStyle(
-                color: Color(0xff6200ee),
-                fontSize: 24.0,
-                fontWeight: FontWeight.bold),
+            style: TextStyle(color: Color(0xff6200ee), fontSize: 18.0, fontWeight: FontWeight.bold),
           )),
         ),
         SizedBox(height: 5.0),
         Container(
-            child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Container(
-                child: Text(
-              "4.1",
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 18.0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Container(
+                height: 10,
+                width: 10,
+                decoration: BoxDecoration(
+                  color: device.isActive ? Colors.yellow : Colors.red,
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
-            )),
-            Container(
-              child: Icon(
-                FontAwesomeIcons.solidStar,
-                color: Colors.amber,
-                size: 15.0,
-              ),
-            ),
-            Container(
-              child: Icon(
-                FontAwesomeIcons.solidStar,
-                color: Colors.amber,
-                size: 15.0,
-              ),
-            ),
-            Container(
-              child: Icon(
-                FontAwesomeIcons.solidStar,
-                color: Colors.amber,
-                size: 15.0,
-              ),
-            ),
-            Container(
-              child: Icon(
-                FontAwesomeIcons.solidStar,
-                color: Colors.amber,
-                size: 15.0,
-              ),
-            ),
-            Container(
-              child: Icon(
-                FontAwesomeIcons.solidStarHalf,
-                color: Colors.amber,
-                size: 15.0,
-              ),
-            ),
-            Container(
-                child: Text(
-              "(946)",
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 18.0,
-              ),
-            )),
-          ],
-        )),
+              SizedBox(width: 10),
+              Text(
+                device.isActive ? 'Online' : 'Offline',
+                style: TextStyle(color: Colors.black54, fontSize: 18.0, fontWeight: FontWeight.bold),
+              )
+            ],
+          ),
+        ),
         SizedBox(height: 5.0),
         Container(
             child: Text(
-          "Closed 09:00-17:00 Thu",
-          style: TextStyle(
-              color: Colors.black54,
-              fontSize: 18.0,
-              fontWeight: FontWeight.bold),
+          device.phone.toString(),
+          style: TextStyle(color: Colors.black54, fontSize: 18.0, fontWeight: FontWeight.bold),
         )),
       ],
     );

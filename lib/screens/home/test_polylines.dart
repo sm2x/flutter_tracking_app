@@ -74,7 +74,7 @@ class MapPageState extends State<MapPage> {
       final MarkerId markerId = MarkerId('marker_$_polylineIdCounter');
       var position = points[_polylineIdCounter];
       BitmapDescriptor markerIcon =
-          await BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5), 'assets/images/source_marker1.png');
+          await BitmapDescriptor.fromAssetImage(ImageConfiguration(devicePixelRatio: 2.5), 'assets/car_icon.png');
       BitmapDescriptor m1 = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
       final Marker marker = Marker(markerId: markerId, position: position, icon: m1);
 

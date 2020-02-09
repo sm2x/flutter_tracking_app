@@ -24,3 +24,5 @@ const kGoogleMapsApiKey = "AIzaSyBXr9t0F7gkAedIJLC2pIn_sae1iGSDLmM";
 const kLocalStorageKey = "tracking_app";
 const kCookieKey = "traccarCookie";
 const kRoutePointsLimit = 100;
+const kShareAppUrl = "http://vt.monarchtrack.com:8082/";
+const kShareAppSubject = "MonarchTrack App";

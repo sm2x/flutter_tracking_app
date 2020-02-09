@@ -7,9 +7,12 @@ import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
+import 'package:flutter_tracking_app/widgets/common/button_container.dart';
+import 'package:flutter_tracking_app/widgets/common/snapping_sheet.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:snapping_sheet/snapping_sheet.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
 
@@ -34,6 +37,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Map<MarkerId, Marker> _markers = {};
   Map<PolylineId, Polyline> _mapPolylines = {};
   LatLng lastPosition = LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
+  DateTime _lastUpdated;
+  DeviceCustomModel _lastPositionData;
   double _zoomLevel = 7.0;
   bool _isLoading = false;
   int _initialHours = 3;
@@ -60,15 +65,15 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   }
 
   //Get device position against positionId
-  Future<DevicePosition> _getDevicePosition() async {
-    DevicePosition data;
+  Future<DeviceCustomModel> _getDevicePosition() async {
     if (_deviceInfo.positionId != null) {
       print(_deviceInfo.positionId);
       try {
         setState(() => _isLoading = true);
-        data = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
-        if (data != null) {
-          lastPosition = LatLng(data.geoPoint.latitude, data.geoPoint.longitude);
+        _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
+        if (_lastPositionData != null) {
+          lastPosition = LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+          _lastUpdated = _lastPositionData.position.date.toLocal();
           _setMapMarker(lastPosition);
           _animateCameraPosition();
           setState(() {});
@@ -80,7 +85,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
     }
     setState(() => _isLoading = false);
-    return data;
+    return _lastPositionData;
   }
 
   void _onRefresh(DeviceCustomModel deviceInfo) async {
@@ -164,51 +169,33 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     }
   }
 
-  Future<Uint8List> getMarker() async {
-    String imgAsset = CommonFunctions.getMapIconImageAsset(category: _deviceInfo.category.toString());
-    ByteData byteData = await DefaultAssetBundle.of(context).load(imgAsset);
-    return byteData.buffer.asUint8List();
-  }
-
   //Set Marker for google map
   void _setMapMarker(LatLng position) async {
-    Uint8List imageData = await getMarker();
-    var pinLocationIcon = BitmapDescriptor.fromBytes(imageData);
-
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: _deviceInfo, context: context);
     print(_deviceInfo.category);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow: InfoWindow(
-        title: _deviceInfo.name.toString(),
-        anchor: Offset(0.5, 0.5),
-        snippet: _routesList.isNotEmpty ? _routesList.last.position.date.toString() : _deviceInfo.lastUpdate.toString(),
-      ),
+      infoWindow: InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
-      rotation: 38.0,
     );
     _markers[deviceMarkerId] = deviceMarker;
   }
 
   // Marker set by Stream //
   void _setMapMarkerByStream(DeviceCustomModel device) async {
-    Uint8List imageData = await getMarker();
-    var pinLocationIcon = BitmapDescriptor.fromBytes(imageData);
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
     var position = LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow: InfoWindow(
-        title: _deviceInfo.name.toString(),
-        anchor: Offset(0.5, 0.5),
-        snippet: _routesList.isNotEmpty ? _routesList.last.position.date.toString() : _deviceInfo.lastUpdate.toString(),
-      ),
+      infoWindow: InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -254,13 +241,33 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
-        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Device Position'),
+        title: Text(_deviceInfo.name.toString()),
         centerTitle: true,
+        actions: <Widget>[
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    height: 10,
+                    width: 10,
+                    decoration: BoxDecoration(
+                      color: _deviceInfo.isActive ? Colors.yellow : Colors.red,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  Text(_deviceInfo.isActive ? 'Active' : 'Inactive'),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: StreamBuilder(
         stream: TraccarClientService().getDevicePositionsStream,
@@ -287,7 +294,6 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
               if (_mapController.isCompleted) {
                 return Column(
                   children: <Widget>[
-                    _deviceInfoWidget(_deviceInfo, textColor),
                     _renderMap(_deviceInfo),
                   ],
                 );
@@ -296,7 +302,6 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           }
           return Column(
             children: <Widget>[
-              _deviceInfoWidget(_deviceInfo, textColor),
               _renderMap(_deviceInfo),
             ],
           );
@@ -353,6 +358,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             _refreshButtonOnMap(deviceInfo),
             _loaderOnMap(),
             _filtersButton(),
+            _snappingSheetWidget(),
           ],
         ),
       ),
@@ -364,19 +370,11 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     return Positioned(
       top: 10,
       right: 10,
-      child: GestureDetector(
+      child: ButtonContainer(
+        iconData: Icons.refresh,
         onTap: () => _onRefresh(deviceInfo),
-        child: Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(30)),
-          child: Center(
-            child: Icon(
-              Icons.refresh,
-              color: Colors.white,
-            ),
-          ),
-        ),
+        height: 50,
+        width: 50,
       ),
     );
   }
@@ -399,26 +397,59 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     return Positioned(
       top: 70,
       right: 10,
-      child: GestureDetector(
-        onTap: () {
-          print('filters');
-          createAlertDialog(context);
-        },
-        child: Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
-            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
-            BoxShadow(color: Colors.black12, spreadRadius: 0.5),
-          ]),
-          child: Center(
-            child: Icon(
-              Icons.filter_list,
-              color: Colors.white,
-              size: 20,
+      child: ButtonContainer(
+        iconData: Icons.filter_list,
+        onTap: () => createAlertDialog(context),
+        height: 50,
+        width: 50,
+      ),
+    );
+  }
+
+  // SnappingSheet widget //
+  Widget _snappingSheetWidget() {
+    // var lastUpdated = DateTime.parse(_deviceInfo.position.date.toString()).toLocal();
+    var lastUpdated = _lastUpdated ?? '';
+    var motion = '';
+    if (_routesList.isNotEmpty) {
+      motion = _lastPositionData.attributes.motion ? 'Moving' : 'Stopped';
+    }
+    return CustomSnappingSheet(
+      sheetBelowWidget: Column(
+        children: <Widget>[
+          //Name
+          Expanded(
+            child: ListTile(
+              leading: Icon(Icons.person),
+              title: Text(_deviceInfo.name.toString() ?? ''),
+              subtitle: Text(_deviceInfo.phone.toString() ?? ''),
             ),
           ),
-        ),
+          //Category
+          Expanded(
+            child: ListTile(
+              leading: Icon(CommonFunctions.getIconData(category: _deviceInfo.category ?? '')),
+              title: Text(_deviceInfo.category.toString() ?? ''),
+              subtitle: Text(_deviceInfo.model.toString() ?? ''),
+            ),
+          ),
+          //Last Communication
+          Expanded(
+            child: ListTile(
+              leading: Icon(Icons.network_wifi),
+              title: Text('Last Communication'),
+              subtitle: Text(lastUpdated.toString()),
+            ),
+          ),
+          //Status
+          Expanded(
+            child: ListTile(
+              leading: Icon(Icons.directions_walk),
+              title: Text('Status'),
+              subtitle: Text(motion),
+            ),
+          )
+        ],
       ),
     );
   }
