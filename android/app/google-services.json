@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "975564480312",
+    "firebase_url": "https://monarchtrackapp.firebaseio.com",
+    "project_id": "monarchtrackapp",
+    "storage_bucket": "monarchtrackapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:975564480312:android:3ee39e115642677c55abcd",
+        "android_client_info": {
+          "package_name": "com.example.flutter_tracking_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "975564480312-rq79i5kdikk869svhqste85r3o6h5cp7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxfiTkjlCTA6gZnKheXfEsr_y45-kAO18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "975564480312-rq79i5kdikk869svhqste85r3o6h5cp7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

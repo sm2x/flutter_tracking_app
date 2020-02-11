@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
+import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/models/user.model.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/screens/home/devices.dart';
@@ -33,10 +34,50 @@ class _HomePageState extends State<HomePage> {
   Map<MarkerId, Marker> _markers = {};
   double _zoomLevel = 7.0;
   AppProvider _appProvider;
+  List<DeviceCustomModel> _devices = List<DeviceCustomModel>();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  Future<List<DeviceCustomModel>> _getDevicesWithPosition() async {
+    if (_devices.isEmpty) {
+      _isLoading = true;
+    }
+    print('loading-devices');
+    var data = await TraccarClientService().getDevices();
+    _appProvider.setDevices(data);
+    for (DeviceCustomModel item in data) {
+      if (item.isActive) {
+        var positionItem = await TraccarClientService.getPositionFromId(positionId: item.positionId);
+        _setMapMarker(positionItem);
+        _devices.add(positionItem);
+      }
+    }
+    print(_devices.length);
+    if (_isLoading == true) {
+      _isLoading = false;
+      //setState(() {});
+    }
+    return _devices;
+  }
+
+  //Set Marker for google map
+  void _setMapMarker(DeviceCustomModel device) async {
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
+    MarkerId deviceMarkerId = MarkerId(device.id.toString());
+    Marker deviceMarker = Marker(
+      markerId: deviceMarkerId,
+      position: LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude),
+      onTap: () {},
+      infoWindow: InfoWindow(title: device.name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
+      icon: pinLocationIcon,
+      zIndex: 2,
+      anchor: Offset(0.5, 0.5),
+    );
+    _markers[deviceMarkerId] = deviceMarker;
   }
 
   /* Build Method */
@@ -60,6 +101,16 @@ class _HomePageState extends State<HomePage> {
           _mapButtonWidget(),
           _bottomRightButtons(),
           _buildContainer(),
+          FutureBuilder(
+            future: _getDevicesWithPosition(),
+            builder: (contex, snapshot) {
+              var data = snapshot.data;
+              if (snapshot.data != null) {
+                return Text('CCC');
+              }
+              return Text('');
+            },
+          ),
         ],
       ),
       drawer: DrawerLayout(),
@@ -104,13 +155,13 @@ class _HomePageState extends State<HomePage> {
       width: MediaQuery.of(context).size.width,
       child: GoogleMap(
         mapType: MapType.normal,
-        initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 8),
+        initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 5),
         onMapCreated: (GoogleMapController controller) async {
-          _mapController.complete(controller);
-          currentLocation = await location.getLocation();
-          _setMapMarker();
           _animateCameraPosition();
-          setState(() {});
+          _mapController.complete(controller);
+          // currentLocation = await location.getLocation();
+          //var data = await _getDevicesWithPosition();
+          print('length-in-map: ');
         },
         markers: Set<Marker>.of(_markers.values),
       ),
@@ -167,20 +218,6 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-  }
-
-  void _setMapMarker() {
-    var position = LatLng(currentLocation.latitude, currentLocation.longitude);
-    print(position);
-    MarkerId deviceMarkerId = MarkerId('userLocation');
-    Marker deviceMarker = Marker(
-      markerId: deviceMarkerId,
-      position: position,
-      onTap: () {},
-      infoWindow: InfoWindow(title: 'Current Location', anchor: Offset(0.5, 0.5)),
-      icon: BitmapDescriptor.defaultMarker,
-    );
-    _markers[deviceMarkerId] = deviceMarker;
   }
 
   //Animate CameraPosition

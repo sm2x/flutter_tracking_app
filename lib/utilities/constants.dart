@@ -19,10 +19,10 @@ BoxDecoration kBoxDecoration1(Color color) => BoxDecoration(
     );
 
 //google maps api-key
-const kGoogleMapsApiKey = "AIzaSyBXr9t0F7gkAedIJLC2pIn_sae1iGSDLmM";
+const kGoogleMapsApiKey = "AIzaSyAaOWBBCIKH6KirngrhnkmyZ3h9PVP9sis";
 
 const kLocalStorageKey = "tracking_app";
 const kCookieKey = "traccarCookie";
-const kRoutePointsLimit = 100;
+const kRoutePointsLimit = 200;
 const kShareAppUrl = "http://vt.monarchtrack.com:8082/";
 const kShareAppSubject = "MonarchTrack App";
