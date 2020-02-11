@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
+import 'package:flutter_tracking_app/screens/auth/login.dart';
 import 'package:flutter_tracking_app/screens/home/device_position.dart';
 import 'package:flutter_tracking_app/screens/home/devices.dart';
 import 'package:flutter_tracking_app/screens/home/test_polylines.dart';
@@ -25,8 +26,9 @@ class MyApp extends StatelessWidget {
         title: 'Tracking App',
         theme: ThemeData(primaryColor: Colors.blueGrey),
         // home: HomePage(),
-        initialRoute: '/Home',
+        initialRoute: _appProvider.getLoggedIn() ? '/Home' : '/Login',
         routes: <String, WidgetBuilder>{
+          '/Login': (context) => Login(),
           '/Home': (context) => HomePage(),
           '/Devices': (context) => DevicesScreen(),
           '/DevicePosition': (context) => DevicePositionScreen(),

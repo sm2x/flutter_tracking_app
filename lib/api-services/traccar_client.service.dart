@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
+import 'package:flutter_tracking_app/models/user.model.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +16,33 @@ import 'package:web_socket_channel/io.dart';
 
 class TraccarClientService {
   final _dio = Dio();
+
+  /*
+   * @description Login Api
+   */
+  Future login({String username, String password}) async {
+    var url = serverProtocol + serverUrl + '/api/session';
+    print(url);
+    var payLoad = Map<String, dynamic>();
+    payLoad['email'] = username;
+    payLoad['password'] = password;
+    // var payLoad = {'email': username, 'password': password};
+    print(payLoad);
+    var response = await _dio.post(url,
+        data: payLoad,
+        options: Options(
+          contentType: ContentType.parse("application/x-www-form-urlencoded"),
+          headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        ));
+    String cookie = response.headers["set-cookie"][0];
+    print(cookie);
+    User data = User.fromJson(response.data as Map<String, dynamic>);
+    print(data.token);
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    sharedPreferences.setString(kCookieKey, cookie);
+    sharedPreferences.setString(kTokenKey, data.token);
+    return data;
+  }
 
   /*
    * @description Listen device-positions Stream emmitting by Websocket
@@ -88,6 +116,8 @@ class TraccarClientService {
    * @description Get Traccar Instance
    */
   static Future<Traccar> getTraccarInstance() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    String userToken = sharedPreferences.getString(kTokenKey);
     final trac = Traccar(serverUrl: serverUrl, userToken: userToken, verbose: true);
     unawaited(trac.init());
     await trac.onReady;

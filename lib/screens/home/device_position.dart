@@ -72,17 +72,20 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         setState(() => _isLoading = true);
         _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
         if (_lastPositionData != null) {
-          lastPosition = LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+          lastPosition =
+              LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
           _lastUpdated = _lastPositionData.position.date.toLocal();
           _setMapMarker(lastPosition);
           _animateCameraPosition();
           setState(() {});
         }
       } catch (error) {
-        _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(error.toString()), duration: Duration(seconds: 3)));
+        _scaffoldKey.currentState
+            .showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
       }
     } else {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
+      _scaffoldKey.currentState
+          .showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
     }
     setState(() => _isLoading = false);
     return _lastPositionData;
@@ -158,7 +161,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         _routesList.add(route);
         // create polyLine objects
         PolylineId pId = PolylineId(route.id.toString());
-        Polyline polyline = Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
+        Polyline polyline =
+            Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
         _mapPolylines[pId] = polyline;
       }
       print(_mapPolylines.length.toString());
@@ -178,7 +182,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow: InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
+      infoWindow:
+          InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -195,7 +200,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow: InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
+      infoWindow:
+          InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -276,7 +282,11 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             DeviceCustomModel data = snapShot.data;
             if (data.device.id == _deviceInfo.id) {
               LatLng position = LatLng(data.position.geoPoint.latitude, data.position.geoPoint.longitude);
-              var text = data.id.toString() + '   ' + data.position.geoPoint.latitude.toString() + '  ' + data.device.id.toString();
+              var text = data.id.toString() +
+                  '   ' +
+                  data.position.geoPoint.latitude.toString() +
+                  '  ' +
+                  data.device.id.toString();
               print(data.id.toString() +
                   '  ' +
                   data.position.totalDistance.toString() +

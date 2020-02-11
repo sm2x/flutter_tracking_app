@@ -44,22 +44,18 @@ class _HomePageState extends State<HomePage> {
 
   Future<List<DeviceCustomModel>> _getDevicesWithPosition() async {
     if (_devices.isEmpty) {
-      _isLoading = true;
-    }
-    print('loading-devices');
-    var data = await TraccarClientService().getDevices();
-    _appProvider.setDevices(data);
-    for (DeviceCustomModel item in data) {
-      if (item.isActive) {
-        var positionItem = await TraccarClientService.getPositionFromId(positionId: item.positionId);
-        _setMapMarker(positionItem);
-        _devices.add(positionItem);
+      var data = await TraccarClientService().getDevices();
+      _appProvider.setDevices(data);
+      for (DeviceCustomModel item in data) {
+        print(item.name.toString() + ' -- ' + item.isActive.toString());
+        if (item.isActive) {
+          var positionItem = await TraccarClientService.getPositionFromId(positionId: item.positionId);
+          positionItem.name = item.name.toString();
+          _setMapMarker(positionItem);
+          _devices.add(positionItem);
+        }
       }
-    }
-    print(_devices.length);
-    if (_isLoading == true) {
-      _isLoading = false;
-      //setState(() {});
+      print(_devices.length);
     }
     return _devices;
   }
@@ -72,7 +68,8 @@ class _HomePageState extends State<HomePage> {
       markerId: deviceMarkerId,
       position: LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude),
       onTap: () {},
-      infoWindow: InfoWindow(title: device.name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
+      infoWindow: InfoWindow(
+          title: device.name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -94,25 +91,26 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: Stack(
-        children: <Widget>[
-          _googleMap(context),
-          _optionsListView(),
-          _mapButtonWidget(),
-          _bottomRightButtons(),
-          _buildContainer(),
-          FutureBuilder(
-            future: _getDevicesWithPosition(),
-            builder: (contex, snapshot) {
-              var data = snapshot.data;
-              if (snapshot.data != null) {
-                return Text('CCC');
-              }
-              return Text('');
-            },
-          ),
-        ],
-      ),
+      body: FutureBuilder(
+          future: _getDevicesWithPosition(),
+          builder: (context, snapshot) {
+            if (snapshot.data != null) {
+              return Stack(
+                children: <Widget>[
+                  _googleMap(context),
+                  _optionsListView(),
+                  _mapButtonWidget(),
+                  _bottomRightButtons(),
+                  _buildContainer(),
+                ],
+              );
+            }
+            return Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2.0,
+              ),
+            );
+          }),
       drawer: DrawerLayout(),
     );
   }
@@ -157,7 +155,6 @@ class _HomePageState extends State<HomePage> {
         mapType: MapType.normal,
         initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 5),
         onMapCreated: (GoogleMapController controller) async {
-          _animateCameraPosition();
           _mapController.complete(controller);
           // currentLocation = await location.getLocation();
           //var data = await _getDevicesWithPosition();
@@ -175,7 +172,11 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          ButtonContainer(iconData: Icons.person_pin, height: 40.0, width: 40.0, onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
+          ButtonContainer(
+              iconData: Icons.person_pin,
+              height: 40.0,
+              width: 40.0,
+              onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
           ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
         ],
       ),

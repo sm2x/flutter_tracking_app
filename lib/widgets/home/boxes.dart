@@ -46,7 +46,8 @@ class Boxes extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: new BorderRadius.circular(24.0),
                       child: Image(
-                        fit: BoxFit.fill,
+                        height: 160,
+                        // fit: BoxFit.fill,
                         image: AssetImage(_image),
                       ),
                     ),

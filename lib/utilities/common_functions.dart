@@ -60,4 +60,30 @@ class CommonFunctions {
     }
     return iconData;
   }
+
+  //showError  Snackbar
+  static void showError(_scaffoldKey, message, {context = null}) {
+    final snackBar = SnackBar(
+      content: Text('Warning : $message'),
+      duration: Duration(seconds: 10),
+      action: SnackBarAction(
+        onPressed: () {},
+        label: 'Close',
+      ),
+    );
+    context == null ? _scaffoldKey.currentState.showSnackBar(snackBar) : Scaffold.of(context).showSnackBar(snackBar);
+  }
+
+  //showSuccess  Snackbar
+  static void showSuccess(_scaffoldKey, String message) {
+    final snackBar = SnackBar(
+      content: Text('$message'),
+      duration: Duration(seconds: 10),
+      action: SnackBarAction(
+        onPressed: () {},
+        label: 'Close',
+      ),
+    );
+    _scaffoldKey.currentState.showSnackBar(snackBar);
+  }
 }
