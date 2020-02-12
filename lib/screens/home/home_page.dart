@@ -61,8 +61,7 @@ class _HomePageState extends State<HomePage> {
       markerId: deviceMarkerId,
       position: LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude),
       onTap: () {},
-      infoWindow: InfoWindow(
-          title: name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
+      infoWindow: InfoWindow(title: name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -74,16 +73,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     _appProvider = Provider.of<AppProvider>(context);
-    print(_appProvider.isLoggedIn.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text('Monarch Tracking App'),
         actions: <Widget>[
           IconButton(
               icon: Icon(FontAwesomeIcons.signOutAlt),
-              onPressed: () {
-                _appProvider.setLoggedIn(status: false);
-                Navigator.pushNamed(context, '/Login');
+              onPressed: () async {
+                await _appProvider.setLoggedIn(status: false);
+                Navigator.popAndPushNamed(context, '/Login');
               })
         ],
       ),
@@ -151,9 +149,9 @@ class _HomePageState extends State<HomePage> {
         mapType: MapType.normal,
         initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 5),
         onMapCreated: (GoogleMapController controller) async {
-          _mapController.complete(controller);
-          //var data = await _getDevicesWithPosition();
-          print('length-in-map: ');
+          if (!_mapController.isCompleted) {
+            _mapController.complete(controller);
+          }
         },
         markers: Set<Marker>.of(_markers.values),
       ),
@@ -167,11 +165,7 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          ButtonContainer(
-              iconData: Icons.person_pin,
-              height: 40.0,
-              width: 40.0,
-              onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
+          ButtonContainer(iconData: Icons.person_pin, height: 40.0, width: 40.0, onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
           ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
         ],
       ),

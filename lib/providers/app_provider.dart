@@ -2,21 +2,27 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/models/user.model.dart';
+import 'package:flutter_tracking_app/utilities/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traccar_client/traccar_client.dart';
 
 class AppProvider with ChangeNotifier {
   bool isLoggedIn = false;
   int homeActiveTabIndex = 2;
-  User user = new User(email: 'admin', password: 'monarch@account14');
+  User user = new User();
   List<DeviceCustomModel> _devices = [];
 
   //loggedIn Updates
-  setLoggedIn({bool status}) {
+  Future setLoggedIn({bool status}) async {
     isLoggedIn = status;
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    return sharedPreferences.setBool(kIsloggedInKey, status);
   }
 
-  getLoggedIn() {
-    return isLoggedIn;
+  Future getLoggedIn() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    isLoggedIn = sharedPreferences.getBool(kIsloggedInKey) ?? isLoggedIn;
+    return Future.value(isLoggedIn);
   }
 
   //User states
