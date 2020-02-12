@@ -1,7 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:sms/sms.dart';
-import 'package:snapping_sheet/snapping_sheet.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -32,7 +29,6 @@ class MySocketPage extends StatefulWidget {
 
 class _MySocketPageState extends State<MySocketPage> {
   TextEditingController _controller = TextEditingController();
-  SmsReceiver receiver = new SmsReceiver();
 
   @override
   Widget build(BuildContext context) {
@@ -58,16 +54,6 @@ class _MySocketPageState extends State<MySocketPage> {
                   padding: const EdgeInsets.symmetric(vertical: 24.0),
                   child: Text(snapshot.hasData ? '${snapshot.data}' : ''),
                 );
-              },
-            ),
-            StreamBuilder<SmsMessage>(
-              stream: receiver.onSmsReceived,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  print(snapshot.data);
-                  return Text(snapshot.data.body.toString());
-                }
-                return Text('Sms');
               },
             ),
           ],

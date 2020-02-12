@@ -149,7 +149,7 @@ class _LoginLayoutState extends State<Login> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
-                    height: MediaQuery.of(context).size.height - 200,
+                    height: MediaQuery.of(context).size.height - 150,
                     child: Column(
                       children: <Widget>[
                         //Image
@@ -160,15 +160,15 @@ class _LoginLayoutState extends State<Login> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Text(
-                                'Login To Manage Your Fleet',
-                                style: GoogleFonts.robotoSlab(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
-                                ),
-                              ),
-                              SizedBox(height: 10.0),
+                              // Text(
+                              //   'Login To Manage Your Fleet',
+                              //   style: GoogleFonts.robotoSlab(
+                              //     fontSize: 20,
+                              //     fontWeight: FontWeight.bold,
+                              //     color: Colors.blueAccent,
+                              //   ),
+                              // ),
+                              // SizedBox(height: 10.0),
                               usernameField,
                               SizedBox(height: 5.0),
                               passwordField,

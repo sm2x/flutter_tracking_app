@@ -7,12 +7,10 @@ import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/models/user.model.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
-import 'package:localstorage/localstorage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/io.dart';
 
 class TraccarClientService {
