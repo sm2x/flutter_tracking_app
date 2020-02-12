@@ -9,29 +9,40 @@ class FooterButtons {
 
   List<Widget> getFooterButtons(BuildContext context) {
     return [
-      InkWell(
-        child: Padding(
-          padding: EdgeInsets.only(right: 20.0),
-          child: Text(kFooterHyperLinkText, style: TextStyle(color: widgetsColor)),
-        ),
-        onTap: () {
-          launch(kFooterHyperLinkUrl);
-        },
-      ),
-      IconButton(
-        color: widgetsColor,
-        icon: Icon(FontAwesomeIcons.facebook),
-        onPressed: () {},
-      ),
-      IconButton(
-        color: widgetsColor,
-        icon: Icon(FontAwesomeIcons.skype),
-        onPressed: () {},
-      ),
-      IconButton(
-        color: widgetsColor,
-        icon: Icon(FontAwesomeIcons.twitter),
-        onPressed: () {},
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          InkWell(
+            child: Padding(
+              padding: EdgeInsets.only(right: 20.0),
+              child: Text(kFooterHyperLinkText, style: TextStyle(color: widgetsColor, fontSize: 16)),
+            ),
+            onTap: () {
+              launch(kFooterHyperLinkUrl);
+            },
+          ),
+          Row(
+            children: <Widget>[
+              IconButton(
+                color: widgetsColor,
+                icon: Icon(FontAwesomeIcons.facebook),
+                onPressed: () {
+                  launch(kCompanyFBLink);
+                },
+              ),
+              IconButton(
+                color: widgetsColor,
+                icon: Icon(FontAwesomeIcons.skype),
+                onPressed: () {},
+              ),
+              IconButton(
+                color: widgetsColor,
+                icon: Icon(FontAwesomeIcons.twitter),
+                onPressed: () => launch(kCompanyTwitterLink),
+              )
+            ],
+          ),
+        ],
       )
     ];
   }

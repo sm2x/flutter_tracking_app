@@ -61,7 +61,8 @@ class _HomePageState extends State<HomePage> {
       markerId: deviceMarkerId,
       position: LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude),
       onTap: () {},
-      infoWindow: InfoWindow(title: name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
+      infoWindow: InfoWindow(
+          title: name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -75,7 +76,7 @@ class _HomePageState extends State<HomePage> {
     _appProvider = Provider.of<AppProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Monarch Tracking App'),
+        title: Text(kCompanyTitle),
         actions: <Widget>[
           IconButton(
               icon: Icon(FontAwesomeIcons.signOutAlt),
@@ -165,7 +166,11 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          ButtonContainer(iconData: Icons.person_pin, height: 40.0, width: 40.0, onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
+          ButtonContainer(
+              iconData: Icons.person_pin,
+              height: 40.0,
+              width: 40.0,
+              onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
           ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
         ],
       ),

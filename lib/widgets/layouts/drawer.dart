@@ -20,7 +20,7 @@ class DrawerLayout extends StatelessWidget {
                 bottom: 10,
                 left: 20,
                 child: Text(
-                  'Tracking App',
+                  kCompanyTitle,
                   style: TextStyle(color: Colors.white, fontSize: 20),
                 ),
               ),

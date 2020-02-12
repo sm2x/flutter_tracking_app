@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/auth/persistant-footer-buttons.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class Login extends StatefulWidget {
@@ -106,6 +107,7 @@ class _LoginLayoutState extends State<Login> {
         backgroundColor: kLoginBackgroundColor,
         key: _scaffoldKey,
         body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             _singleChildScrollView(),
           ],
@@ -116,27 +118,6 @@ class _LoginLayoutState extends State<Login> {
       body = HomePage();
     }
     return body;
-    // return Scaffold(
-    //   backgroundColor: kLoginBackgroundColor,
-    //   key: _scaffoldKey,
-    //   body: Column(
-    //     children: <Widget>[
-    //       _singleChildScrollView(),
-    //       FutureBuilder(
-    //         future: _appProvider.getLoggedIn(),
-    //         builder: (context, snapshot) {
-    //           if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-    //             if (snapshot.data == true) {
-    //               Navigator.popAndPushNamed(context, '/Home');
-    //             }
-    //           }
-    //           return Text('');
-    //         },
-    //       ),
-    //     ],
-    //   ),
-    //   persistentFooterButtons: FooterButtons(Colors.white).getFooterButtons(context),
-    // );
   }
 
   // SingleChildScroll View
@@ -168,7 +149,7 @@ class _LoginLayoutState extends State<Login> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
-                    height: MediaQuery.of(context).size.height - 120,
+                    height: MediaQuery.of(context).size.height - 200,
                     child: Column(
                       children: <Widget>[
                         //Image
@@ -181,8 +162,8 @@ class _LoginLayoutState extends State<Login> {
                             children: <Widget>[
                               Text(
                                 'Login To Manage Your Fleet',
-                                style: TextStyle(
-                                  fontSize: 18,
+                                style: GoogleFonts.robotoSlab(
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blueAccent,
                                 ),

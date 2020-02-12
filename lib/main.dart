@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         // home: HomePage(),
         initialRoute: '/',
         routes: <String, WidgetBuilder>{
-          '/': (context) => _appProvider.isLoggedIn ? HomePage() : Login(),
+          '/': (context) => Login(),
           '/Login': (context) => Login(),
           '/Home': (context) => HomePage(),
           '/Devices': (context) => DevicesScreen(),

@@ -15,7 +15,7 @@ const kGoogleMapsApiKey = "AIzaSyAaOWBBCIKH6KirngrhnkmyZ3h9PVP9sis";
 
 const kLocalStorageKey = "tracking_app";
 const kCookieKey = "traccarCookie";
-const kRoutePointsLimit = 200;
+const kRoutePointsLimit = 300;
 const kShareAppUrl = "http://vt.monarchtrack.com:8082/";
 const kShareAppSubject = "MonarchTrack App";
 const kLoginWidgetsColor = const Color(0xff42a5f5); //blueish
@@ -26,4 +26,7 @@ const kFooterHyperLinkText = "MonarchTrack";
 const kFooterHyperLinkUrl = 'https://monarchtrack.com';
 const kTokenKey = "sessionToken";
 const kCompanyName = 'MonarchTrack';
+const kCompanyTitle = "Monarch Tracking Systems";
 const kIsloggedInKey = "isLoggedIn";
+const kCompanyFBLink = "https://www.facebook.com/monarchTrackingPakistan/";
+const kCompanyTwitterLink = "https://twitter.com/TrackMonarch";
