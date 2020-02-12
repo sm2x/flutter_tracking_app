@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
-import 'package:flutter_tracking_app/models/user.model.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/screens/home/devices.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
@@ -11,12 +10,10 @@ import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/common/button_container.dart';
 import 'package:flutter_tracking_app/widgets/layouts/drawer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 import '../../widgets/home/boxes.dart';
-import './websockets.dart';
 import 'package:location/location.dart';
 
 class HomePage extends StatefulWidget {
@@ -35,7 +32,6 @@ class _HomePageState extends State<HomePage> {
   double _zoomLevel = 7.0;
   AppProvider _appProvider;
   List<DeviceCustomModel> _devices = List<DeviceCustomModel>();
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -46,22 +42,19 @@ class _HomePageState extends State<HomePage> {
     if (_devices.isEmpty) {
       var data = await TraccarClientService().getDevices();
       _appProvider.setDevices(data);
-      for (DeviceCustomModel item in data) {
-        print(item.name.toString() + ' -- ' + item.isActive.toString());
-        if (item.isActive) {
-          var positionItem = await TraccarClientService.getPositionFromId(positionId: item.positionId);
-          positionItem.name = item.name.toString();
-          _setMapMarker(positionItem);
-          _devices.add(positionItem);
-        }
+      List<DeviceCustomModel> positions = await TraccarClientService().getDeviceLatestPositions();
+      _devices = data;
+      for (DeviceCustomModel item in positions) {
+        int findDeviceIndex = _devices.indexWhere((row) => row.id == item.device.id);
+        item.name = _devices[findDeviceIndex].name;
+        _setMapMarker(item, _devices[findDeviceIndex].name);
       }
-      print(_devices.length);
     }
     return _devices;
   }
 
   //Set Marker for google map
-  void _setMapMarker(DeviceCustomModel device) async {
+  void _setMapMarker(DeviceCustomModel device, String name) async {
     var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
     MarkerId deviceMarkerId = MarkerId(device.id.toString());
     Marker deviceMarker = Marker(
@@ -69,7 +62,7 @@ class _HomePageState extends State<HomePage> {
       position: LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude),
       onTap: () {},
       infoWindow: InfoWindow(
-          title: device.name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
+          title: name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
       icon: pinLocationIcon,
       zIndex: 2,
       anchor: Offset(0.5, 0.5),
@@ -81,14 +74,17 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     _appProvider = Provider.of<AppProvider>(context);
+    print(_appProvider.isLoggedIn.toString());
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tracking App'),
+        title: Text('Monarch Tracking App'),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () => {},
-          )
+              icon: Icon(FontAwesomeIcons.signOutAlt),
+              onPressed: () {
+                _appProvider.setLoggedIn(status: false);
+                Navigator.pushNamed(context, '/Login');
+              })
         ],
       ),
       body: FutureBuilder(
@@ -156,7 +152,6 @@ class _HomePageState extends State<HomePage> {
         initialCameraPosition: CameraPosition(target: LatLng(33.519971, 73.087819), zoom: 5),
         onMapCreated: (GoogleMapController controller) async {
           _mapController.complete(controller);
-          // currentLocation = await location.getLocation();
           //var data = await _getDevicesWithPosition();
           print('length-in-map: ');
         },
@@ -201,7 +196,7 @@ class _HomePageState extends State<HomePage> {
           ButtonContainer(
             iconData: Icons.location_searching,
             onTap: () {
-              Navigator.pushNamed(context, DevicesScreen.route);
+              _animateCameraPosition();
             },
             height: 50.0,
             width: 50.0,
@@ -223,7 +218,9 @@ class _HomePageState extends State<HomePage> {
 
   //Animate CameraPosition
   void _animateCameraPosition() async {
+    currentLocation = await location.getLocation();
     var position = LatLng(currentLocation.latitude, currentLocation.longitude);
+    print(position.toString());
     _zoomLevel = 11.0;
     GoogleMapController controller = await _mapController.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: position, zoom: _zoomLevel)));

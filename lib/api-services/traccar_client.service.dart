@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/models/user.model.dart';
+import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,18 +17,16 @@ import 'package:web_socket_channel/io.dart';
 
 class TraccarClientService {
   final _dio = Dio();
-
+  AppProvider _appProvider = AppProvider();
+  TraccarClientService({AppProvider appProvider});
   /*
    * @description Login Api
    */
   Future login({String username, String password}) async {
     var url = serverProtocol + serverUrl + '/api/session';
-    print(url);
     var payLoad = Map<String, dynamic>();
     payLoad['email'] = username;
     payLoad['password'] = password;
-    // var payLoad = {'email': username, 'password': password};
-    print(payLoad);
     var response = await _dio.post(url,
         data: payLoad,
         options: Options(
@@ -35,12 +34,11 @@ class TraccarClientService {
           headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
         ));
     String cookie = response.headers["set-cookie"][0];
-    print(cookie);
     User data = User.fromJson(response.data as Map<String, dynamic>);
-    print(data.token);
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     sharedPreferences.setString(kCookieKey, cookie);
     sharedPreferences.setString(kTokenKey, data.token);
+    // _appProvider.setLoggedIn(status: true);
     return data;
   }
 
@@ -87,6 +85,35 @@ class TraccarClientService {
         },
       ),
     );
+    if (response.statusCode == 200) {
+      final devices = <DeviceCustomModel>[];
+      for (final data in response.data) {
+        // print(data);
+        var item = DeviceCustomModel.fromJson(data as Map<String, dynamic>);
+        devices.add(item);
+      }
+      return devices;
+    } else {
+      throw Exception("Unexpected Happened !");
+    }
+  }
+
+  // Get All Devices of current User //
+  Future<List<DeviceCustomModel>> getDeviceLatestPositions() async {
+    String cookie = await getCookie();
+    String uri = "$serverProtocol$serverUrl/api/positions";
+    var response = await Dio().get(
+      uri,
+      options: Options(
+        contentType: ContentType.json,
+        headers: <String, dynamic>{
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Cookie": cookie,
+        },
+      ),
+    );
+    print(response.data);
     if (response.statusCode == 200) {
       final devices = <DeviceCustomModel>[];
       for (final data in response.data) {

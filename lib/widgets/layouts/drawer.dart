@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tracking_app/utilities/constants.dart';
+import 'package:flutter_tracking_app/widgets/auth/persistant-footer-buttons.dart';
+import 'package:share/share.dart';
 import '../../screens/home/websockets.dart';
 
 class DrawerLayout extends StatelessWidget {
@@ -26,11 +29,11 @@ class DrawerLayout extends StatelessWidget {
           decoration: BoxDecoration(color: Theme.of(context).primaryColor),
         ),
         ListTile(
-          leading: Icon(Icons.person),
-          title: Text('Web Sockets'),
+          leading: Icon(Icons.share),
+          title: Text('Share With Friends'),
           onTap: () {
             Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (context) => MySocket()));
+            Share.share(kShareAppUrl, subject: kShareAppSubject);
           },
         ),
         Divider(),
@@ -42,14 +45,18 @@ class DrawerLayout extends StatelessWidget {
             Navigator.pushNamed(context, '/Devices');
           },
         ),
-        Divider(),
-        ListTile(
-          leading: Icon(Icons.map),
-          title: Text('Polylines'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/TestPolylines');
-          },
+        SizedBox(height: 280),
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              SizedBox(height: 10),
+              Row(
+                children: FooterButtons(Theme.of(context).primaryColor).getFooterButtons(context).toList(),
+              ),
+            ],
+          ),
         ),
       ]),
     );

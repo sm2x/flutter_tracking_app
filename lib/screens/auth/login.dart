@@ -80,10 +80,10 @@ class LoginLayoutState extends State<LoginLayout> {
               setState(() => _loading = true);
               final username = userNameController.text;
               final password = passwordController.text;
-              await TraccarClientService().login(username: username, password: password);
+              await TraccarClientService(appProvider: _appProvider).login(username: username, password: password);
               CommonFunctions.showSuccess(_scaffoldKey, username + "  " + password);
+              _appProvider.isLoggedIn = true;
               setState(() => _loading = false);
-              _appProvider.setLoggedIn(status: true);
               Navigator.pushNamed(context, '/Home');
             }
           } catch (error) {
@@ -128,9 +128,6 @@ class LoginLayoutState extends State<LoginLayout> {
   @override
   Widget build(BuildContext context) {
     _appProvider = Provider.of<AppProvider>(context);
-    if (_appProvider.getLoggedIn()) {
-      Navigator.pushNamed(context, '/Home');
-    }
     final usernameField = TextFormField(
       controller: userNameController,
       cursorColor: Colors.white,
@@ -204,7 +201,6 @@ class LoginLayoutState extends State<LoginLayout> {
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                         letterSpacing: 1.5,
-                                      
                                       ),
                                     ),
                                     SizedBox(height: 10),
