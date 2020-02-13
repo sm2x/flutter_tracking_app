@@ -52,7 +52,6 @@ class TraccarClientService {
     rawPosSub = posStream.listen((dynamic data) {
       final dataMap = jsonDecode(data.toString()) as Map<String, dynamic>;
       if (dataMap.containsKey("positions")) {
-        // print(dataMap);
         DevicePosition pos;
         DeviceCustomModel device;
         for (final posMap in dataMap["positions"]) {

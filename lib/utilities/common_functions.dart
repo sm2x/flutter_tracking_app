@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 
 class CommonFunctions {
   static String getMapIconImageAsset({String category}) {
@@ -85,5 +86,10 @@ class CommonFunctions {
       ),
     );
     _scaffoldKey.currentState.showSnackBar(snackBar);
+  }
+
+  //Show Datetime Pattern
+  static formatDateTime(dateTime) {
+    return dateTime != null ? DateFormat.yMMMd().add_jms().format(dateTime) : '';
   }
 }

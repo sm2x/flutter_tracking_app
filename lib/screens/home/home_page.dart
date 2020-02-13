@@ -47,25 +47,26 @@ class _HomePageState extends State<HomePage> {
       for (DeviceCustomModel item in positions) {
         int findDeviceIndex = _devices.indexWhere((row) => row.id == item.device.id);
         item.name = _devices[findDeviceIndex].name;
-        _setMapMarker(item, _devices[findDeviceIndex].name);
+        _setMapMarker(item, _devices[findDeviceIndex].name, _devices[findDeviceIndex]);
       }
     }
     return _devices;
   }
 
   //Set Marker for google map
-  void _setMapMarker(DeviceCustomModel device, String name) async {
-    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
-    MarkerId deviceMarkerId = MarkerId(device.id.toString());
+  void _setMapMarker(DeviceCustomModel devicePosition, String name, DeviceCustomModel deviceInfo) async {
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: devicePosition, context: context);
+    MarkerId deviceMarkerId = MarkerId(devicePosition.id.toString());
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
-      position: LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude),
-      onTap: () {},
+      position: LatLng(devicePosition.position.geoPoint.latitude, devicePosition.position.geoPoint.longitude),
+      onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": deviceInfo}),
       infoWindow: InfoWindow(
-          title: name.toString(), anchor: Offset(0.5, 0.5), snippet: device.position.date.toLocal().toString()),
+        title: name.toString(),
+        anchor: Offset(0.5, 0.5),
+        snippet: CommonFunctions.formatDateTime(devicePosition.position.date.toLocal()).toString(),
+      ),
       icon: pinLocationIcon,
-      zIndex: 2,
-      anchor: Offset(0.5, 0.5),
     );
     _markers[deviceMarkerId] = deviceMarker;
   }
@@ -94,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                 children: <Widget>[
                   _googleMap(context),
                   _optionsListView(),
-                  _mapButtonWidget(),
+                  // _mapButtonWidget(),
                   _bottomRightButtons(),
                   _buildContainer(),
                 ],
@@ -171,7 +172,7 @@ class _HomePageState extends State<HomePage> {
               height: 40.0,
               width: 40.0,
               onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
-          ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
+          // ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
         ],
       ),
     );

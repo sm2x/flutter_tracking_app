@@ -9,6 +9,7 @@ import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/common/button_container.dart';
 import 'package:flutter_tracking_app/widgets/common/snapping_sheet.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -19,6 +20,7 @@ import 'package:google_map_polyline/google_map_polyline.dart';
 const LatLng SOURCE_LOCATION = LatLng(33.533297, 73.089087);
 
 class DevicePositionScreen extends StatefulWidget {
+  static const String route = '/DevicePosition';
   @override
   _DevicePositionScreenState createState() => _DevicePositionScreenState();
 }
@@ -38,6 +40,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Map<PolylineId, Polyline> _mapPolylines = {};
   LatLng lastPosition = LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
   DateTime _lastUpdated;
+  double _lastSpeed;
   DeviceCustomModel _lastPositionData;
   double _zoomLevel = 7.0;
   bool _isLoading = false;
@@ -75,7 +78,9 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           lastPosition =
               LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
           _lastUpdated = _lastPositionData.position.date.toLocal();
-          _setMapMarker(lastPosition);
+          _lastSpeed = _lastPositionData.position.geoPoint.speed;
+          // _setMapMarker(lastPosition);
+          _setMapMarkerByStream(_lastPositionData);
           _animateCameraPosition();
           setState(() {});
         }
@@ -182,17 +187,18 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow:
-          InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
+      infoWindow: InfoWindow(
+          title: _deviceInfo.name.toString(),
+          anchor: Offset(0.5, 0.5),
+          snippet: CommonFunctions.formatDateTime(_lastUpdated).toString()),
       icon: pinLocationIcon,
-      zIndex: 2,
-      anchor: Offset(0.5, 0.5),
     );
     _markers[deviceMarkerId] = deviceMarker;
   }
 
   // Marker set by Stream //
   void _setMapMarkerByStream(DeviceCustomModel device) async {
+    _lastUpdated = device.position.date.toLocal();
     var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
     var position = LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
@@ -200,11 +206,12 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow:
-          InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: _lastUpdated.toString()),
+      infoWindow: InfoWindow(
+        title: _deviceInfo.name.toString(),
+        anchor: Offset(0.5, 0.5),
+        snippet: CommonFunctions.formatDateTime(device.position.date.toLocal()),
+      ),
       icon: pinLocationIcon,
-      zIndex: 2,
-      anchor: Offset(0.5, 0.5),
     );
     _markers[deviceMarkerId] = deviceMarker;
   }
@@ -282,25 +289,12 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             DeviceCustomModel data = snapShot.data;
             if (data.device.id == _deviceInfo.id) {
               LatLng position = LatLng(data.position.geoPoint.latitude, data.position.geoPoint.longitude);
-              var text = data.id.toString() +
-                  '   ' +
-                  data.position.geoPoint.latitude.toString() +
-                  '  ' +
-                  data.device.id.toString();
-              print(data.id.toString() +
-                  '  ' +
-                  data.position.totalDistance.toString() +
-                  '   ' +
-                  position.toString() +
-                  '   ' +
-                  data.device.id.toString() +
-                  ' ' +
-                  data.position.date.toString() +
-                  ' ' +
-                  data.position.geoPoint.heading.toString());
+              _devices.add(data);
+              _lastSpeed = data.position.geoPoint.speed;
+              _lastPositionData = data;
+              print(_devices.length);
+              _setPolyLinePoints(_devices);
               _setMapMarkerByStream(data);
-              // setState(() {});
-              // _animateCameraPosition();
               if (_mapController.isCompleted) {
                 return Column(
                   children: <Widget>[
@@ -369,7 +363,73 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             _loaderOnMap(),
             _filtersButton(),
             _snappingSheetWidget(),
+            _speedWidget(),
+            _ignitionWidget(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _speedWidget() {
+    return Positioned(
+      top: 10,
+      left: 10,
+      child: Container(
+        height: 60,
+        width: 60,
+        decoration:
+            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
+        ]),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: <Widget>[
+              Icon(
+                FontAwesomeIcons.tachometerAlt,
+                color: Colors.black87,
+                size: 20,
+              ),
+              SizedBox(height: 5),
+              Text(
+                _lastSpeed != null ? _lastSpeed.round().toString() + ' km' : '',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _ignitionWidget() {
+    return Positioned(
+      top: 80,
+      left: 10,
+      child: Container(
+        height: 60,
+        width: 60,
+        decoration:
+            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
+        ]),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: <Widget>[
+              Icon(
+                FontAwesomeIcons.key,
+                color: Colors.black87,
+                size: 20,
+              ),
+              SizedBox(height: 5),
+              Text(
+                _lastPositionData != null ? _lastPositionData.attributes.ignition ? 'On' : 'Off' : '',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -439,8 +499,9 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           Expanded(
             child: ListTile(
               leading: Icon(CommonFunctions.getIconData(category: _deviceInfo.category ?? '')),
-              title: Text(_deviceInfo.category.toString() ?? ''),
-              subtitle: Text(_deviceInfo.model.toString() ?? ''),
+              title: Text((_deviceInfo.model == null ? 'Category' : _deviceInfo.category.toString())),
+              subtitle:
+                  Text(_deviceInfo.model == null ? _deviceInfo.category.toString() : _deviceInfo.model.toString()),
             ),
           ),
           //Last Communication
@@ -448,7 +509,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             child: ListTile(
               leading: Icon(Icons.network_wifi),
               title: Text('Last Communication'),
-              subtitle: Text(lastUpdated.toString()),
+              subtitle: Text(CommonFunctions.formatDateTime(_lastUpdated).toString()),
             ),
           ),
           //Status
@@ -457,6 +518,16 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
               leading: Icon(Icons.directions_walk),
               title: Text('Status'),
               subtitle: Text(motion),
+            ),
+          ),
+          //Odometer
+          Expanded(
+            child: ListTile(
+              leading: Icon(FontAwesomeIcons.tachometerAlt),
+              title: Text('Odometer'),
+              subtitle: Text(_lastPositionData != null
+                  ? _lastPositionData.attributes.odometer != null ? _lastPositionData.attributes.odometer : ''
+                  : ''),
             ),
           )
         ],

@@ -52,7 +52,8 @@ class DeviceAttributes {
   double totalDistance;
   String ip;
   bool motion;
-  DeviceAttributes({this.ignition, this.distance, this.totalDistance, this.ip, this.motion});
+  int odometer;
+  DeviceAttributes({this.ignition, this.distance, this.totalDistance, this.ip, this.motion, this.odometer});
   factory DeviceAttributes.fromJson(Map<String, dynamic> data) {
     var attrs = data["attributes"];
     return DeviceAttributes(
@@ -61,6 +62,7 @@ class DeviceAttributes {
       ignition: attrs["ignition"],
       ip: attrs["ip"],
       motion: attrs["motion"],
+      odometer: attrs["odometer"],
     );
   }
 }
