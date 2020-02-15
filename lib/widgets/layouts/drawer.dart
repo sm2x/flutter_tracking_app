@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/auth/persistant-footer-buttons.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share/share.dart';
 
 class DrawerLayout extends StatelessWidget {
@@ -26,6 +27,22 @@ class DrawerLayout extends StatelessWidget {
                   // decoration: BoxDecoration(color: Theme.of(context).primaryColor),
                 ),
                 ListTile(
+                  leading: Icon(Icons.track_changes, color: Theme.of(context).primaryColor),
+                  title: Text('All Devices'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/Devices');
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.receipt, color: Theme.of(context).primaryColor),
+                  title: Text('Reports'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/Devices');
+                  },
+                ),
+                ListTile(
                   leading: Icon(Icons.share, color: Theme.of(context).primaryColor),
                   title: Text('Share With Friends'),
                   onTap: () {
@@ -33,17 +50,18 @@ class DrawerLayout extends StatelessWidget {
                     Share.share(kShareAppUrl, subject: kShareAppSubject);
                   },
                 ),
-                Divider(),
-                ListTile(
-                  leading: Icon(Icons.track_changes, color: Theme.of(context).primaryColor),
-                  title: Text('My Devices'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '/Devices');
-                  },
-                ),
               ]),
             ),
+            Divider(),
+            ListTile(
+              leading: Icon(FontAwesomeIcons.signOutAlt, color: Theme.of(context).primaryColor),
+              title: Text('Logout'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/Devices');
+              },
+            ),
+            Divider(),
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(

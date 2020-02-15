@@ -17,7 +17,7 @@ class FooterButtons {
             child: Padding(
               padding: EdgeInsets.only(right: 20.0),
               child: Text(kFooterHyperLinkText,
-                  style: GoogleFonts.parisienne(color: widgetsColor, fontSize: 16, fontWeight: FontWeight.w400)),
+                  style: GoogleFonts.parisienne(color: widgetsColor, fontSize: 20, fontWeight: FontWeight.w600)),
             ),
             onTap: () {
               launch(kFooterHyperLinkUrl);
