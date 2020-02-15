@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,10 @@ import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/common/button_container.dart';
 import 'package:flutter_tracking_app/widgets/common/snapping_sheet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:snapping_sheet/snapping_sheet.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
 
@@ -26,6 +29,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   RefreshController _refreshController = RefreshController(initialRefresh: true);
   List<Device> _devices = [];
   Completer<GoogleMapController> _mapController = Completer();
+  // GoogleMapController _mapController;
   GoogleMapPolyline googleMapPolyline = new GoogleMapPolyline(apiKey: kGoogleMapsApiKey);
   Map<MarkerId, Marker> markers = new Map<MarkerId, Marker>();
   List<LatLng> routeCoords;
@@ -52,6 +56,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   @override
   void didUpdateWidget(DevicePositionScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    setState(() {});
   }
 
   @override
@@ -59,13 +64,13 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     _mapPolylines.clear();
     _markers.clear();
     _points.clear();
-    _routesList.clear();
     super.dispose();
   }
 
   //Get device position against positionId
   Future<DeviceCustomModel> _getDevicePosition() async {
     if (_deviceInfo.positionId != null) {
+      print(_deviceInfo.positionId);
       try {
         setState(() => _isLoading = true);
         _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
@@ -75,7 +80,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           _lastUpdated = _lastPositionData.position.date.toLocal();
           _lastSpeed = _lastPositionData.position.geoPoint.speed;
           // _setMapMarker(lastPosition);
-          _setMapMarker(_lastPositionData, _deviceInfo);
+          _setMapMarkerByStream(_lastPositionData);
           _animateCameraPosition();
           setState(() {});
         }
@@ -156,6 +161,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       }
       for (Device route in data) {
         var position = LatLng(route.position.geoPoint.latitude, route.position.geoPoint.longitude);
+        // print(position);
         _points.add(position);
         _routesList.add(route);
         // create polyLine objects
@@ -164,26 +170,46 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
         _mapPolylines[pId] = polyline;
       }
+      print(_mapPolylines.length.toString());
     }
     if (_points.isNotEmpty) {
       lastPosition = _points.last;
-      _setMapMarker(data.last, _deviceInfo);
+      _setMapMarker(lastPosition);
     }
   }
 
-  // Marker set by Stream //
-  void _setMapMarker(DeviceCustomModel devicePosition, DeviceCustomModel deviceInfo) async {
-    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: devicePosition, context: context);
-    var position = LatLng(devicePosition.position.geoPoint.latitude, devicePosition.position.geoPoint.longitude);
-    MarkerId deviceMarkerId = MarkerId(deviceInfo.id.toString());
+  //Set Marker for google map
+  void _setMapMarker(LatLng position) async {
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: _deviceInfo, context: context);
+    print(_deviceInfo.category);
+    MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
       infoWindow: InfoWindow(
-        title: deviceInfo.name.toString(),
+          title: _deviceInfo.name.toString(),
+          anchor: Offset(0.5, 0.5),
+          snippet: CommonFunctions.formatDateTime(_lastUpdated).toString()),
+      icon: pinLocationIcon,
+    );
+    _markers[deviceMarkerId] = deviceMarker;
+  }
+
+  // Marker set by Stream //
+  void _setMapMarkerByStream(DeviceCustomModel device) async {
+    _lastUpdated = device.position.date.toLocal();
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
+    var position = LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude);
+    MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
+    Marker deviceMarker = Marker(
+      markerId: deviceMarkerId,
+      position: position,
+      onTap: () {},
+      infoWindow: InfoWindow(
+        title: _deviceInfo.name.toString(),
         anchor: Offset(0.5, 0.5),
-        snippet: CommonFunctions.formatDateTime(devicePosition.position.date.toLocal()),
+        snippet: CommonFunctions.formatDateTime(device.position.date.toLocal()),
       ),
       icon: pinLocationIcon,
     );
@@ -223,6 +249,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Widget build(BuildContext context) {
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
     _deviceInfo = args["deviceInfo"];
+    Color textColor = Theme.of(context).primaryTextTheme.title.color;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,
@@ -261,11 +288,13 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           if (snapShot.hasData) {
             DeviceCustomModel data = snapShot.data;
             if (data.device.id == _deviceInfo.id) {
+              LatLng position = LatLng(data.position.geoPoint.latitude, data.position.geoPoint.longitude);
               _devices.add(data);
               _lastSpeed = data.position.geoPoint.speed;
               _lastPositionData = data;
+              print(_devices.length);
               _setPolyLinePoints(_devices);
-              _setMapMarker(data, _deviceInfo);
+              _setMapMarkerByStream(data);
               if (_mapController.isCompleted) {
                 return Column(
                   children: <Widget>[
@@ -285,6 +314,30 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     );
   }
 
+  //Device Info Container
+  Widget _deviceInfoWidget(DeviceCustomModel deviceInfo, Color textColor) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 15),
+      child: ListTile(
+        leading: Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.white),
+          height: 30,
+          width: 30,
+          child: Icon(
+            Icons.location_on,
+            size: 20,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        title: Text(deviceInfo.name, style: TextStyle(color: textColor)),
+        trailing: Text(
+          deviceInfo.isActive ? 'Active' : 'InActive',
+          style: TextStyle(color: textColor),
+        ),
+      ),
+    );
+  }
+
   // Google Map //
   Widget _renderMap(DeviceCustomModel deviceInfo) {
     return Expanded(
@@ -298,6 +351,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                 if (!_mapController.isCompleted) {
                   _mapController.complete(controller);
                   await _getDevicePosition();
+                  // _getDeviceRoutes(deviceInfo);
                   _onLoading(deviceInfo);
                 }
               },
@@ -424,6 +478,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
 
   // SnappingSheet widget //
   Widget _snappingSheetWidget() {
+    // var lastUpdated = DateTime.parse(_deviceInfo.position.date.toString()).toLocal();
+    var lastUpdated = _lastUpdated ?? '';
     var motion = '';
     if (_routesList.isNotEmpty) {
       motion = _lastPositionData.attributes.motion ? 'Moving' : 'Stopped';
@@ -470,9 +526,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
               leading: Icon(FontAwesomeIcons.tachometerAlt),
               title: Text('Odometer'),
               subtitle: Text(_lastPositionData != null
-                  ? _lastPositionData.attributes.odometer != null
-                      ? _lastPositionData.attributes.odometer.toString()
-                      : ''
+                  ? _lastPositionData.attributes.odometer != null ? _lastPositionData.attributes.odometer : ''
                   : ''),
             ),
           )

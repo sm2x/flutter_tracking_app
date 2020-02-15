@@ -95,7 +95,6 @@ class _HomePageState extends State<HomePage> {
                 children: <Widget>[
                   _googleMap(context),
                   _optionsListView(),
-                  // _mapButtonWidget(),
                   _bottomRightButtons(),
                   _buildContainer(),
                 ],
@@ -220,7 +219,6 @@ class _HomePageState extends State<HomePage> {
   void _animateCameraPosition() async {
     currentLocation = await location.getLocation();
     var position = LatLng(currentLocation.latitude, currentLocation.longitude);
-    print(position.toString());
     _zoomLevel = 11.0;
     GoogleMapController controller = await _mapController.future;
     controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: position, zoom: _zoomLevel)));

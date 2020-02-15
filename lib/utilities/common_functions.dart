@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 
 class CommonFunctions {
+  //Get mapIcon image path from assets
   static String getMapIconImageAsset({String category}) {
     String mapDescriptor;
     switch (category) {
