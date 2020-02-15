@@ -20,9 +20,15 @@ class _DevicesScreenState extends State<DevicesScreen> {
   List<DeviceCustomModel> _devices = [];
   RefreshController _refreshController = RefreshController(initialRefresh: true);
   AppProvider _appProvider;
+  List<DeviceCustomModel> _searchResults = [];
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(DevicesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
@@ -66,11 +72,28 @@ class _DevicesScreenState extends State<DevicesScreen> {
               ],
             )
           : AppBar(
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _searchClicked = false),
+              ),
               title: TextField(
+                autofocus: true,
+                cursorColor: Colors.white,
                 style: TextStyle(color: Colors.white, fontSize: 20),
                 controller: _searchController,
-                decoration:
-                    InputDecoration(labelText: 'Search', labelStyle: TextStyle(fontSize: 20, color: Colors.white)),
+                decoration: InputDecoration(
+                  labelText: 'Search',
+                  labelStyle: TextStyle(fontSize: 20, color: Colors.white),
+                ),
+                onChanged: (value) {
+                  _searchResults.clear();
+                  _devices.forEach((item) {
+                    if (item.name.toLowerCase().contains(value.toLowerCase())) {
+                      _searchResults.add(item);
+                    }
+                  });
+                  setState(() {});
+                },
               ),
             ),
       body: Container(
@@ -79,12 +102,19 @@ class _DevicesScreenState extends State<DevicesScreen> {
           controller: _refreshController,
           enablePullDown: true,
           onRefresh: _onRefresh,
-          child: ListView.builder(
-            itemCount: _devices.length,
-            itemBuilder: (context, index) {
-              return _listViewElementWidget(_devices[index]);
-            },
-          ),
+          child: _searchResults.isNotEmpty && _searchController.text != ''
+              ? ListView.builder(
+                  itemCount: _searchResults.length,
+                  itemBuilder: (context, index) {
+                    return _listViewElementWidget(_searchResults[index]);
+                  },
+                )
+              : ListView.builder(
+                  itemCount: _devices.length,
+                  itemBuilder: (context, index) {
+                    return _listViewElementWidget(_devices[index]);
+                  },
+                ),
         ),
       ),
     );
@@ -97,7 +127,11 @@ class _DevicesScreenState extends State<DevicesScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         InkWell(
-          onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": item}),
+          onTap: () {
+            _searchClicked = false;
+            _searchController.clear();
+            Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": item});
+          },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[

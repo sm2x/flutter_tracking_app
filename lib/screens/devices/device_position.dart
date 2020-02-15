@@ -10,7 +10,10 @@ import 'package:flutter_tracking_app/widgets/common/button_container.dart';
 import 'package:flutter_tracking_app/widgets/common/snapping_sheet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:share/share.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
 
@@ -363,6 +366,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             _loaderOnMap(),
             _speedWidget(),
             _ignitionWidget(),
+            _shareLocationWidget(),
             _snappingSheetWidget(),
           ],
         ),
@@ -391,7 +395,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                 size: 20,
               ),
               SizedBox(height: 1),
-              Text(_lastSpeed != null ? _lastSpeed.round().toString() + ' km' : '',
+              Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '',
                   style: TextStyle(fontSize: 11, color: Colors.white)),
             ],
           ),
@@ -426,6 +430,45 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                 style: TextStyle(fontSize: 11, color: Colors.white),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  //Share Location Widget
+  Widget _shareLocationWidget() {
+    return Positioned(
+      top: 130,
+      left: 10,
+      child: Container(
+        height: 50,
+        width: 50,
+        decoration:
+            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
+          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
+        ]),
+        child: InkWell(
+          onTap: () async {
+            String token = (await SharedPreferences.getInstance()).getString(kTokenKey);
+            Share.share(kShareLocationUrl + '?token=' + token, subject: 'Sharing Location');
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: <Widget>[
+                Icon(
+                  FontAwesomeIcons.mapMarkerAlt,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                SizedBox(height: 1),
+                Text(
+                  'Share',
+                  style: TextStyle(fontSize: 11, color: Colors.white),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -508,10 +551,21 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             title: Text('Status'),
             subtitle: Text(motion),
           ),
+          _lastPositionData != null
+              ? _sheetWidgetChild(
+                  leading: FontAwesomeIcons.route,
+                  title: Text('Route Interval'),
+                  subtitle: Text(
+                    DateFormat.jm().format(DateTime.now().subtract(Duration(hours: _lastHours))).toString() +
+                        ' To ' +
+                        DateFormat.jm().format(DateTime.now()).toString(),
+                  ),
+                )
+              : Text(''),
           _sheetWidgetChild(
             leading: FontAwesomeIcons.tachometerAlt,
             title: Text('Odometer'),
-            subtitle: Text(''),
+            subtitle: Text(_deviceAttributes != null ? _deviceAttributes.odometer.toString() + kKmUnit : ''),
           ),
         ],
       ),

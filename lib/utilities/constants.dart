@@ -30,3 +30,6 @@ const kCompanyTitle = "Monarch Tracking Systems";
 const kIsloggedInKey = "isLoggedIn";
 const kCompanyFBLink = "https://www.facebook.com/monarchTrackingPakistan/";
 const kCompanyTwitterLink = "https://twitter.com/TrackMonarch";
+const kShareLocationUrl = "http://vt.monarchtrack.com:8085/track";
+const kKmUnit = ' km';
+const kSpeedUnit = ' km/h';

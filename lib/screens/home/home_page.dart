@@ -79,38 +79,6 @@ class _HomePageState extends State<HomePage> {
     _appProvider = Provider.of<AppProvider>(context);
     return Scaffold(
       key: _scaffoldKey,
-      // appBar: AppBar(
-      //   backgroundColor: Colors.white,
-      //   leading: IconButton(
-      //     icon: Icon(
-      //       Icons.menu,
-      //       color: Theme.of(context).primaryColor,
-      //     ),
-      //     onPressed: () {
-      //       _scaffoldKey.currentState.openDrawer();
-      //     },
-      //   ),
-      //   title: Container(
-      //     height: 100,
-      //     decoration: BoxDecoration(
-      //       image: DecorationImage(
-      //         fit: BoxFit.fill,
-      //         // image: AssetImage('assets/logos/h_logo-old.jpg'),
-      //         image: AssetImage('assets/logos/h_logo.jpg'),
-      //       ),
-      //     ),
-      //   ),
-      //   centerTitle: true,
-      //   actions: <Widget>[
-      //     IconButton(
-      //         icon: Icon(FontAwesomeIcons.signOutAlt),
-      //         color: Theme.of(context).primaryColor,
-      //         onPressed: () async {
-      //           await _appProvider.setLoggedIn(status: false);
-      //           Navigator.popAndPushNamed(context, '/Login');
-      //         })
-      //   ],
-      // ),
       body: FutureBuilder(
           future: _getDevicesWithPosition(),
           builder: (context, snapshot) {
@@ -128,8 +96,31 @@ class _HomePageState extends State<HomePage> {
               );
             }
             return Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2.0,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(
+                        FontAwesomeIcons.mapMarkerAlt,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        kCompanyName,
+                        style: GoogleFonts.pacifico(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.5,
+                            color: Theme.of(context).primaryColor),
+                      ),
+                    ],
+                  ),
+                  CircularProgressIndicator(
+                    strokeWidth: 2.0,
+                  ),
+                ],
               ),
             );
           }),
@@ -263,7 +254,7 @@ class _HomePageState extends State<HomePage> {
               width: 40.0,
               onTap: () => Navigator.pushNamed(context, DevicesScreen.route),
               containerColor: Theme.of(context).canvasColor,
-              iconColor: Colors.black54,
+              iconColor: Colors.black87,
             ),
             // ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
           ],
@@ -302,20 +293,20 @@ class _HomePageState extends State<HomePage> {
             height: 50.0,
             width: 50.0,
             containerColor: Theme.of(context).canvasColor,
-            iconColor: Colors.black54,
+            iconColor: Colors.black87,
           ),
           SizedBox(height: 10),
           // Share Button //
-          ButtonContainer(
-            iconData: Icons.share,
-            onTap: () {
-              Share.share(kShareAppUrl, subject: kShareAppSubject);
-            },
-            height: 50.0,
-            width: 50.0,
-            containerColor: Theme.of(context).canvasColor,
-            iconColor: Colors.black54,
-          ),
+          // ButtonContainer(
+          //   iconData: Icons.share,
+          //   onTap: () {
+          //     Share.share(kShareAppUrl, subject: kShareAppSubject);
+          //   },
+          //   height: 50.0,
+          //   width: 50.0,
+          //   containerColor: Theme.of(context).canvasColor,
+          //   iconColor: Colors.black87,
+          // ),
         ],
       ),
     );
