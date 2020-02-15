@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/screens/auth/login.dart';
-import 'package:flutter_tracking_app/screens/home/device_position.dart';
-import 'package:flutter_tracking_app/screens/home/devices.dart';
+import 'package:flutter_tracking_app/screens/devices/device_position.dart';
+import 'package:flutter_tracking_app/screens/devices/devices.dart';
 import 'package:flutter_tracking_app/screens/home/test_polylines.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:provider/provider.dart';
-import 'package:timezone/data/latest.dart';
 import './screens/home/home_page.dart';
 
 void main() {

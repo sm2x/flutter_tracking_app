@@ -1,7 +1,5 @@
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
-import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -42,7 +40,8 @@ class MapPageState extends State<MapPage> {
 
   void setInitialLocation() async {
     _currentLocation = await _location.getLocation();
-    _destinationLocation = LocationData.fromMap({"longitude": SOURCE_LOCATION.longitude, "latitude": SOURCE_LOCATION.latitude});
+    _destinationLocation =
+        LocationData.fromMap({"longitude": SOURCE_LOCATION.longitude, "latitude": SOURCE_LOCATION.latitude});
   }
 
   void initMarker() {
@@ -111,7 +110,11 @@ class MapPageState extends State<MapPage> {
         builder: (BuildContext context, AsyncSnapshot snapShot) {
           if (snapShot.hasData) {
             DeviceCustomModel data = snapShot.data;
-            text = data.id.toString() + '   ' + data.position.geoPoint.latitude.toString() + '  ' + data.device.id.toString();
+            text = data.id.toString() +
+                '   ' +
+                data.position.geoPoint.latitude.toString() +
+                '  ' +
+                data.device.id.toString();
             print(data.id.toString() +
                 '  ' +
                 data.position.totalDistance.toString() +

@@ -209,4 +209,29 @@ class TraccarClientService {
       throw Exception("Unexpected Happened !");
     }
   }
+
+  // @description Get Single Device Info
+  static Future<DeviceCustomModel> getDeviceInfo({int deviceId}) async {
+    String cookie = await getCookie();
+    String uri = "$serverProtocol$serverUrl/api/devices";
+    final queryParameters = <String, dynamic>{"id": deviceId};
+    var response = await Dio().get(
+      uri,
+      queryParameters: queryParameters,
+      options: Options(
+        contentType: ContentType.json,
+        headers: <String, dynamic>{
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Cookie": cookie,
+        },
+      ),
+    );
+    if (response.statusCode == 200) {
+      DeviceCustomModel deviceInfo = DeviceCustomModel.fromJson(response.data[0]);
+      return deviceInfo;
+    } else {
+      throw Exception("Unexpected Happened !");
+    }
+  }
 }

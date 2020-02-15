@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
-import 'package:flutter_tracking_app/screens/home/devices.dart';
+import 'package:flutter_tracking_app/screens/devices/devices.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/common/button_container.dart';
 import 'package:flutter_tracking_app/widgets/layouts/drawer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:share/share.dart';
@@ -24,6 +25,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _mapController = Completer();
   Map<MarkerId, Marker> markers = new Map<MarkerId, Marker>();
   LocationData currentLocation;
@@ -60,11 +62,11 @@ class _HomePageState extends State<HomePage> {
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
       position: LatLng(devicePosition.position.geoPoint.latitude, devicePosition.position.geoPoint.longitude),
-      onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": deviceInfo}),
       infoWindow: InfoWindow(
         title: name.toString(),
         anchor: Offset(0.5, 0.5),
-        snippet: CommonFunctions.formatDateTime(devicePosition.position.date.toLocal()).toString(),
+        snippet: 'Click For Tracking',
+        onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": deviceInfo}),
       ),
       icon: pinLocationIcon,
     );
@@ -76,28 +78,53 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     _appProvider = Provider.of<AppProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(kCompanyTitle),
-        actions: <Widget>[
-          IconButton(
-              icon: Icon(FontAwesomeIcons.signOutAlt),
-              onPressed: () async {
-                await _appProvider.setLoggedIn(status: false);
-                Navigator.popAndPushNamed(context, '/Login');
-              })
-        ],
-      ),
+      key: _scaffoldKey,
+      // appBar: AppBar(
+      //   backgroundColor: Colors.white,
+      //   leading: IconButton(
+      //     icon: Icon(
+      //       Icons.menu,
+      //       color: Theme.of(context).primaryColor,
+      //     ),
+      //     onPressed: () {
+      //       _scaffoldKey.currentState.openDrawer();
+      //     },
+      //   ),
+      //   title: Container(
+      //     height: 100,
+      //     decoration: BoxDecoration(
+      //       image: DecorationImage(
+      //         fit: BoxFit.fill,
+      //         // image: AssetImage('assets/logos/h_logo-old.jpg'),
+      //         image: AssetImage('assets/logos/h_logo.jpg'),
+      //       ),
+      //     ),
+      //   ),
+      //   centerTitle: true,
+      //   actions: <Widget>[
+      //     IconButton(
+      //         icon: Icon(FontAwesomeIcons.signOutAlt),
+      //         color: Theme.of(context).primaryColor,
+      //         onPressed: () async {
+      //           await _appProvider.setLoggedIn(status: false);
+      //           Navigator.popAndPushNamed(context, '/Login');
+      //         })
+      //   ],
+      // ),
       body: FutureBuilder(
           future: _getDevicesWithPosition(),
           builder: (context, snapshot) {
             if (snapshot.data != null) {
-              return Stack(
-                children: <Widget>[
-                  _googleMap(context),
-                  _optionsListView(),
-                  _bottomRightButtons(),
-                  _buildContainer(),
-                ],
+              return SafeArea(
+                child: Stack(
+                  children: <Widget>[
+                    _googleMap(context),
+                    _customAppBar(),
+                    _optionsListView(),
+                    _bottomRightButtons(),
+                    _buildContainer(),
+                  ],
+                ),
               );
             }
             return Center(
@@ -129,7 +156,6 @@ class _HomePageState extends State<HomePage> {
                 CommonFunctions.getMapIconImageAsset(category: item.category.toString()),
                 33.535090,
                 73.089921,
-                item.name.toString(),
                 item,
               ),
             );
@@ -159,20 +185,89 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  //Custom AppBar
+  Widget _customAppBar() {
+    return Positioned(
+      top: 10,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: Container(
+          width: MediaQuery.of(context).size.width - 10,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Theme.of(context).canvasColor,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(color: Colors.grey, blurRadius: 1.5, spreadRadius: 0.2),
+              BoxShadow(color: Colors.grey, blurRadius: 1.5, spreadRadius: 0.2),
+            ],
+          ),
+          child: Row(
+            children: <Widget>[
+              IconButton(
+                icon: Icon(
+                  Icons.menu,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () {
+                  _scaffoldKey.currentState.openDrawer();
+                },
+              ),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      FontAwesomeIcons.mapMarkerAlt,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      kCompanyName,
+                      style: GoogleFonts.pacifico(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.5,
+                          color: Theme.of(context).primaryColor),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(FontAwesomeIcons.signOutAlt, size: 25),
+                color: Theme.of(context).primaryColor,
+                onPressed: () async {
+                  await _appProvider.setLoggedIn(status: false);
+                  Navigator.popAndPushNamed(context, '/Login');
+                },
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // options tabs listView Widget //
   Widget _optionsListView() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          ButtonContainer(
+    return Positioned(
+      top: 70,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            ButtonContainer(
               iconData: Icons.person_pin,
               height: 40.0,
               width: 40.0,
-              onTap: () => Navigator.pushNamed(context, DevicesScreen.route)),
-          // ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
-        ],
+              onTap: () => Navigator.pushNamed(context, DevicesScreen.route),
+              containerColor: Theme.of(context).canvasColor,
+              iconColor: Colors.black54,
+            ),
+            // ButtonContainer(iconData: Icons.search, onTap: () {}, height: 40.0, width: 40.0),
+          ],
+        ),
       ),
     );
   }
@@ -181,7 +276,14 @@ class _HomePageState extends State<HomePage> {
     return Positioned(
       top: 50,
       right: 5,
-      child: ButtonContainer(iconData: Icons.map, onTap: () {}, height: 40.0, width: 40.0),
+      child: ButtonContainer(
+        iconData: Icons.map,
+        onTap: () {},
+        height: 40.0,
+        width: 40.0,
+        containerColor: Theme.of(context).canvasColor,
+        iconColor: Colors.black54,
+      ),
     );
   }
 
@@ -199,6 +301,8 @@ class _HomePageState extends State<HomePage> {
             },
             height: 50.0,
             width: 50.0,
+            containerColor: Theme.of(context).canvasColor,
+            iconColor: Colors.black54,
           ),
           SizedBox(height: 10),
           // Share Button //
@@ -209,6 +313,8 @@ class _HomePageState extends State<HomePage> {
             },
             height: 50.0,
             width: 50.0,
+            containerColor: Theme.of(context).canvasColor,
+            iconColor: Colors.black54,
           ),
         ],
       ),

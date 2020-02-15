@@ -39,10 +39,14 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   double _lastSpeed;
   DeviceCustomModel _lastPositionData;
   double _zoomLevel = 7.0;
+  double _camTilt = 0.0;
+  double _camBearing = 0.0;
   bool _isLoading = false;
   int _initialHours = 3;
   int _lastHours = 3;
   GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  DeviceAttributes _deviceAttributes = DeviceAttributes();
+  Circle _markerCircle;
 
   @override
   void initState() {
@@ -65,49 +69,51 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
 
   //Get device position against positionId
   Future<DeviceCustomModel> _getDevicePosition() async {
-    if (_deviceInfo.positionId != null) {
+    if (_deviceInfo != null) {
       try {
-        setState(() => _isLoading = true);
-        _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
-        if (_lastPositionData != null) {
-          lastPosition =
-              LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
-          _lastUpdated = _lastPositionData.position.date.toLocal();
-          _lastSpeed = _lastPositionData.position.geoPoint.speed;
-          // _setMapMarker(lastPosition);
-          _setMapMarker(_lastPositionData, _deviceInfo);
-          _animateCameraPosition();
-          setState(() {});
+        _deviceInfo = await TraccarClientService.getDeviceInfo(deviceId: _deviceInfo.id); //get latest deviceInfo
+        if (_deviceInfo.positionId != null) {
+          try {
+            setState(() => _isLoading = true);
+            _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
+            if (_lastPositionData != null) {
+              _deviceAttributes = _lastPositionData.attributes;
+              lastPosition =
+                  LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+              _lastUpdated = _lastPositionData.position.date.toLocal();
+              _lastSpeed = _lastPositionData.position.geoPoint.speed;
+              _setMapMarker(_lastPositionData, _deviceInfo);
+              _animateCameraPosition(_lastPositionData);
+            }
+          } catch (error) {
+            _scaffoldKey.currentState
+                .showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
+          }
+        } else {
+          _scaffoldKey.currentState
+              .showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
         }
       } catch (error) {
         _scaffoldKey.currentState
-            .showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
+            .showSnackBar(SnackBar(content: Text('Device Not Found'), duration: Duration(seconds: 3)));
       }
-    } else {
-      _scaffoldKey.currentState
-          .showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
     }
+
     setState(() => _isLoading = false);
     return _lastPositionData;
   }
 
   void _onRefresh(DeviceCustomModel deviceInfo) async {
     _lastHours = _initialHours;
-    _getDeviceRoutes(deviceInfo);
+    await _getDeviceRoutes(deviceInfo);
+    if (_routesList.isNotEmpty) {
+      _animateCameraPosition(_lastPositionData);
+    }
     _refreshController.refreshCompleted();
   }
 
-  void _onLoading(DeviceCustomModel deviceInfo) async {
-    _lastHours = _initialHours;
-    _getDeviceRoutes(deviceInfo);
-    if (_routesList.isNotEmpty) {
-      _animateCameraPosition();
-    }
-    _refreshController.loadComplete();
-  }
-
   //Get device report Routes
-  void _getDeviceRoutes(DeviceCustomModel deviceInfo) async {
+  Future<void> _getDeviceRoutes(DeviceCustomModel deviceInfo) async {
     if (_lastHours < 24) {
       setState(() {
         _isLoading = true;
@@ -126,7 +132,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         }
       } else {
         _lastHours += 3;
-        _getDeviceRoutes(deviceInfo);
+        await _getDeviceRoutes(deviceInfo);
         return;
       }
       setState(() {
@@ -183,32 +189,76 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       infoWindow: InfoWindow(
         title: deviceInfo.name.toString(),
         anchor: Offset(0.5, 0.5),
-        snippet: CommonFunctions.formatDateTime(devicePosition.position.date.toLocal()),
+        snippet: CommonFunctions.formatDateTime(_lastUpdated).toString(),
       ),
       icon: pinLocationIcon,
+      zIndex: 2,
     );
     _markers[deviceMarkerId] = deviceMarker;
+    CircleId mapCircleId = CircleId("deviceCircle");
+    _markerCircle = Circle(
+      circleId: mapCircleId,
+      radius: devicePosition.position.geoPoint.accuracy,
+      zIndex: 1,
+      strokeColor: Colors.blue,
+      center: position,
+      fillColor: Colors.blue.withAlpha(70),
+    );
   }
 
   //Animate CameraPosition
-  void _animateCameraPosition() async {
-    _zoomLevel = 11.0;
+  void _animateCameraPosition(DeviceCustomModel devicePosition) async {
     GoogleMapController controller = await _mapController.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: lastPosition, zoom: _zoomLevel)));
+    controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        target: CommonFunctions.getLatLng(devicePosition.position.geoPoint),
+        zoom: _zoomLevel,
+        tilt: _camTilt,
+        bearing: _camBearing)));
+  }
+
+  //On Camera Move
+  void _onCameraMove(CameraPosition camPostion) {
+    _zoomLevel = camPostion.zoom;
+    _camTilt = camPostion.tilt;
+    _camBearing = camPostion.bearing;
   }
 
   // Create AlertDialog
   Future<void> createAlertDialog(BuildContext context) {
+    final userNameController = TextEditingController(text: 'admin');
+    final passwordController = TextEditingController(text: 'monarch@account14');
+    final usernameField = TextFormField(
+      controller: userNameController,
+      cursorColor: Colors.white,
+      decoration: InputDecoration(labelText: 'Username'),
+    );
+    final passwordField = TextFormField(
+      obscureText: true,
+      controller: passwordController,
+      decoration: InputDecoration(
+        labelText: 'Password',
+      ),
+    );
     return showDialog(
         context: context,
         builder: (context) {
-          return CupertinoAlertDialog(
+          return AlertDialog(
             title: Text('Apply Filters'),
             // titleTextStyle: GoogleFonts.openSans(letterSpacing: 0.5, fontWeight: FontWeight.bold),
-            content: Text('content here'),
+            content: Container(
+              child: Column(
+                children: <Widget>[
+                  usernameField,
+                  passwordField,
+                ],
+              ),
+            ),
             actions: <Widget>[
               MaterialButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pop(context);
+                  _onRefresh(_deviceInfo);
+                },
                 elevation: 5.0,
                 child: Text('Submit'),
               ),
@@ -264,6 +314,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
               _devices.add(data);
               _lastSpeed = data.position.geoPoint.speed;
               _lastPositionData = data;
+              _deviceAttributes = _lastPositionData.attributes;
               _setPolyLinePoints(_devices);
               _setMapMarker(data, _deviceInfo);
               if (_mapController.isCompleted) {
@@ -298,19 +349,21 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                 if (!_mapController.isCompleted) {
                   _mapController.complete(controller);
                   await _getDevicePosition();
-                  _onLoading(deviceInfo);
+                  _onRefresh(deviceInfo);
                 }
               },
+              onCameraMove: _onCameraMove,
               markers: Set<Marker>.of(_markers.values),
               polylines: Set<Polyline>.of(_mapPolylines.values),
+              // circles: {_markerCircle},
             ),
             //Refresh Widget
             _refreshButtonOnMap(deviceInfo),
+            // _filtersButton(),
             _loaderOnMap(),
-            _filtersButton(),
-            _snappingSheetWidget(),
             _speedWidget(),
             _ignitionWidget(),
+            _snappingSheetWidget(),
           ],
         ),
       ),
@@ -322,10 +375,10 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       top: 10,
       left: 10,
       child: Container(
-        height: 60,
-        width: 60,
+        height: 50,
+        width: 50,
         decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
           BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
         ]),
         child: Padding(
@@ -334,14 +387,12 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             children: <Widget>[
               Icon(
                 FontAwesomeIcons.tachometerAlt,
-                color: Colors.black87,
+                color: Colors.white,
                 size: 20,
               ),
-              SizedBox(height: 5),
-              Text(
-                _lastSpeed != null ? _lastSpeed.round().toString() + ' km' : '',
-                style: TextStyle(fontSize: 12),
-              ),
+              SizedBox(height: 1),
+              Text(_lastSpeed != null ? _lastSpeed.round().toString() + ' km' : '',
+                  style: TextStyle(fontSize: 11, color: Colors.white)),
             ],
           ),
         ),
@@ -351,13 +402,13 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
 
   Widget _ignitionWidget() {
     return Positioned(
-      top: 80,
+      top: 70,
       left: 10,
       child: Container(
-        height: 60,
-        width: 60,
+        height: 50,
+        width: 50,
         decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
           BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
         ]),
         child: Padding(
@@ -366,13 +417,13 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             children: <Widget>[
               Icon(
                 FontAwesomeIcons.key,
-                color: Colors.black87,
+                color: Colors.white,
                 size: 20,
               ),
-              SizedBox(height: 5),
+              SizedBox(height: 1),
               Text(
-                _lastPositionData != null ? _lastPositionData.attributes.ignition ? 'On' : 'Off' : '',
-                style: TextStyle(fontSize: 12),
+                _deviceAttributes.ignition != null ? _deviceAttributes.ignition ? 'On' : 'Off' : 'Off',
+                style: TextStyle(fontSize: 11, color: Colors.white),
               ),
             ],
           ),
@@ -385,12 +436,14 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Widget _refreshButtonOnMap(deviceInfo) {
     return Positioned(
       top: 10,
-      right: 10,
+      right: 4,
       child: ButtonContainer(
         iconData: Icons.refresh,
         onTap: () => _onRefresh(deviceInfo),
         height: 50,
         width: 50,
+        containerColor: Theme.of(context).primaryColor,
+        iconColor: Colors.white,
       ),
     );
   }
@@ -412,12 +465,14 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Widget _filtersButton() {
     return Positioned(
       top: 70,
-      right: 10,
+      right: 5,
       child: ButtonContainer(
         iconData: Icons.filter_list,
         onTap: () => createAlertDialog(context),
         height: 50,
         width: 50,
+        containerColor: Theme.of(context).primaryColor,
+        iconColor: Colors.white,
       ),
     );
   }
@@ -426,57 +481,49 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Widget _snappingSheetWidget() {
     var motion = '';
     if (_routesList.isNotEmpty) {
-      motion = _lastPositionData.attributes.motion ? 'Moving' : 'Stopped';
+      if (_deviceAttributes != null) {
+        motion = _deviceAttributes.motion ? 'Moving' : 'Stopped';
+      }
     }
     return CustomSnappingSheet(
       sheetBelowWidget: Column(
         children: <Widget>[
-          //Name
-          Expanded(
-            child: ListTile(
-              leading: Icon(Icons.person),
-              title: Text(_deviceInfo.name.toString() ?? ''),
-              subtitle: Text(_deviceInfo.phone.toString() ?? ''),
-            ),
+          _sheetWidgetChild(
+            leading: Icons.person,
+            title: Text(_deviceInfo.name.toString() ?? ''),
+            subtitle: Text(_deviceInfo.phone.toString() ?? ''),
           ),
-          //Category
-          Expanded(
-            child: ListTile(
-              leading: Icon(CommonFunctions.getIconData(category: _deviceInfo.category ?? '')),
-              title: Text((_deviceInfo.model == null ? 'Category' : _deviceInfo.category.toString())),
-              subtitle:
-                  Text(_deviceInfo.model == null ? _deviceInfo.category.toString() : _deviceInfo.model.toString()),
-            ),
+          _sheetWidgetChild(
+            leading: CommonFunctions.getIconData(category: _deviceInfo.category) ?? '',
+            title: Text((_deviceInfo.model == null ? 'Category' : _deviceInfo.category.toString())),
+            subtitle: Text(_deviceInfo.model == null ? _deviceInfo.category.toString() : _deviceInfo.model.toString()),
           ),
-          //Last Communication
-          Expanded(
-            child: ListTile(
-              leading: Icon(Icons.network_wifi),
-              title: Text('Last Communication'),
-              subtitle: Text(CommonFunctions.formatDateTime(_lastUpdated).toString()),
-            ),
+          _sheetWidgetChild(
+            leading: Icons.network_wifi,
+            title: Text('Last Communication'),
+            subtitle: Text(CommonFunctions.formatDateTime(_lastUpdated).toString()),
           ),
-          //Status
-          Expanded(
-            child: ListTile(
-              leading: Icon(Icons.directions_walk),
-              title: Text('Status'),
-              subtitle: Text(motion),
-            ),
+          _sheetWidgetChild(
+            leading: Icons.directions_walk,
+            title: Text('Status'),
+            subtitle: Text(motion),
           ),
-          //Odometer
-          Expanded(
-            child: ListTile(
-              leading: Icon(FontAwesomeIcons.tachometerAlt),
-              title: Text('Odometer'),
-              subtitle: Text(_lastPositionData != null
-                  ? _lastPositionData.attributes.odometer != null
-                      ? _lastPositionData.attributes.odometer.toString()
-                      : ''
-                  : ''),
-            ),
-          )
+          _sheetWidgetChild(
+            leading: FontAwesomeIcons.tachometerAlt,
+            title: Text('Odometer'),
+            subtitle: Text(''),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _sheetWidgetChild({IconData leading, Widget title, Widget subtitle}) {
+    return Expanded(
+      child: ListTile(
+        leading: Icon(leading, color: Theme.of(context).primaryColor),
+        title: title,
+        subtitle: subtitle,
       ),
     );
   }

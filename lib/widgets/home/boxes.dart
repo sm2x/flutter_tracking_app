@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
+import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -10,10 +11,9 @@ class Boxes extends StatelessWidget {
   final String _image;
   final double lat;
   final double long;
-  final String resturantName;
   final DeviceCustomModel device;
   final Completer<GoogleMapController> _controller = Completer();
-  Boxes(this._image, this.lat, this.long, this.resturantName, this.device);
+  Boxes(this._image, this.lat, this.long, this.device);
 
   //Future functions
   Future<void> _gotoLocation(double lat, double long) async {
@@ -55,7 +55,7 @@ class Boxes extends StatelessWidget {
                   Container(
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: myDetailsContainer1(resturantName),
+                      child: myDetailsContainer(),
                     ),
                   ),
                 ],
@@ -66,7 +66,7 @@ class Boxes extends StatelessWidget {
   }
 
   //Details Container widget
-  Widget myDetailsContainer1(String restaurantName) {
+  Widget myDetailsContainer() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
@@ -74,7 +74,7 @@ class Boxes extends StatelessWidget {
           padding: const EdgeInsets.only(left: 8.0),
           child: Container(
               child: Text(
-            restaurantName,
+            device.name.toString(),
             style: TextStyle(color: Color(0xff6200ee), fontSize: 18.0, fontWeight: FontWeight.bold),
           )),
         ),
@@ -95,7 +95,7 @@ class Boxes extends StatelessWidget {
               Text(
                 device.isActive ? 'Online' : 'Offline',
                 style: TextStyle(color: Colors.black54, fontSize: 18.0, fontWeight: FontWeight.bold),
-              )
+              ),
             ],
           ),
         ),
@@ -103,6 +103,12 @@ class Boxes extends StatelessWidget {
         Container(
             child: Text(
           device.phone.toString(),
+          style: TextStyle(color: Colors.black54, fontSize: 18.0, fontWeight: FontWeight.bold),
+        )),
+        SizedBox(height: 5.0),
+        Container(
+            child: Text(
+          CommonFunctions.getMotion(motion: device.motion),
           style: TextStyle(color: Colors.black54, fontSize: 18.0, fontWeight: FontWeight.bold),
         )),
       ],

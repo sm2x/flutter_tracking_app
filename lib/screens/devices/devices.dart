@@ -9,11 +9,14 @@ import 'package:traccar_client/traccar_client.dart';
 
 class DevicesScreen extends StatefulWidget {
   static const route = '/Devices';
+
   @override
   _DevicesScreenState createState() => _DevicesScreenState();
 }
 
 class _DevicesScreenState extends State<DevicesScreen> {
+  bool _searchClicked = false;
+  TextEditingController _searchController = new TextEditingController();
   List<DeviceCustomModel> _devices = [];
   RefreshController _refreshController = RefreshController(initialRefresh: true);
   AppProvider _appProvider;
@@ -48,32 +51,31 @@ class _DevicesScreenState extends State<DevicesScreen> {
     _appProvider = Provider.of<AppProvider>(context);
     _devices = _appProvider.getDevices();
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Devices'),
-      ),
+      appBar: !_searchClicked
+          ? AppBar(
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text('Devices'),
+              actions: <Widget>[
+                IconButton(
+                  icon: Icon(Icons.search),
+                  onPressed: () => setState(() => _searchClicked = true),
+                )
+              ],
+            )
+          : AppBar(
+              title: TextField(
+                style: TextStyle(color: Colors.white, fontSize: 20),
+                controller: _searchController,
+                decoration:
+                    InputDecoration(labelText: 'Search', labelStyle: TextStyle(fontSize: 20, color: Colors.white)),
+              ),
+            ),
       body: Container(
         padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-        child:
-            // FutureBuilder(
-            //   future: _getDevices(),
-            //   builder: (BuildContext context, AsyncSnapshot snapshot) {
-            //     if (snapshot.connectionState == ConnectionState.done) {
-            //       return ListView(
-            //           children: _devices.map((item) {
-            //         return _listViewElementWidget(item);
-            //       }).toList());
-            //     }
-            //     return Center(
-            //         child: CircularProgressIndicator(
-            //       strokeWidth: 2.0,
-            //     ));
-            //   },
-            // ),
-            SmartRefresher(
+        child: SmartRefresher(
           controller: _refreshController,
           enablePullDown: true,
           onRefresh: _onRefresh,
@@ -126,7 +128,8 @@ class _DevicesScreenState extends State<DevicesScreen> {
                 child: Container(
                   height: 10,
                   width: 10,
-                  decoration: BoxDecoration(color: item.isActive ? Colors.yellow : Colors.red, borderRadius: BorderRadius.circular(30)),
+                  decoration: BoxDecoration(
+                      color: item.isActive ? Colors.yellow : Colors.red, borderRadius: BorderRadius.circular(30)),
                 ),
               ),
             ],

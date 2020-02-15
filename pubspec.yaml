@@ -32,14 +32,11 @@ dependencies:
   connectivity: ^0.4.6+2
   provider: ^4.0.2
   http: ^0.12.0+2
-  flutter_polyline_points: ^0.1.0
   location: ^2.3.5
   localstorage: ^3.0.0
   share: ^0.6.3+5
   google_fonts: ^0.3.7
   snapping_sheet: ^1.1.1
-  intl: ^0.16.1
-  timezone: ^0.5.6
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -64,6 +61,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
    - assets/images/
+   - assets/logos/
    - assets/images/car_transparent.png
    
   # An image asset can refer to one or more resolution-specific "variants", see

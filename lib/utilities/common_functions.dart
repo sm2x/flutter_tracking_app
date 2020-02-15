@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
-import 'dart:typed_data';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -92,5 +89,15 @@ class CommonFunctions {
   //Show Datetime Pattern
   static formatDateTime(dateTime) {
     return dateTime != null ? DateFormat.yMMMd().add_jms().format(dateTime) : '';
+  }
+
+  //Get LatLng from deviceCustomModel
+  static LatLng getLatLng(geoPoint) {
+    return LatLng(geoPoint.latitude, geoPoint.longitude);
+  }
+
+  //Label for Device Motion
+  static String getMotion({String motion}) {
+    return motion == 'moving' ? 'Moving' : 'Stopped';
   }
 }

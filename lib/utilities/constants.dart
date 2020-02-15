@@ -20,7 +20,7 @@ const kShareAppUrl = "http://vt.monarchtrack.com:8082/";
 const kShareAppSubject = "MonarchTrack App";
 const kLoginWidgetsColor = const Color(0xff42a5f5); //blueish
 //const kLoginBackgroundColor = const Color(0xffffffff); //white
-const kLoginBackgroundColor = Colors.blueAccent;
+const kLoginBackgroundColor = Colors.purple;
 
 const kFooterHyperLinkText = "MonarchTrack";
 const kFooterHyperLinkUrl = 'https://monarchtrack.com';
