@@ -15,9 +15,9 @@ import 'package:web_socket_channel/io.dart';
 import 'package:http/http.dart' as http;
 
 class TraccarClientService {
+  final AppProvider appProvider;
   final _dio = Dio();
-  AppProvider _appProvider = AppProvider();
-  TraccarClientService({AppProvider appProvider});
+  TraccarClientService({this.appProvider});
   /*
    * @description Login Api
    */
@@ -39,7 +39,8 @@ class TraccarClientService {
     sharedPreferences.setString(kTokenKey, data.token);
     sharedPreferences.setString('username', username);
     sharedPreferences.setString('password', password);
-    // _appProvider.setLoggedIn(status: true);
+    sharedPreferences.setBool('loggedIn', true);
+    appProvider.setCookie(apiCookie: cookie);
     return data;
   }
 
@@ -47,7 +48,8 @@ class TraccarClientService {
    * @description Listen device-positions Stream emmitting by Websocket
    */
   Stream<Device> get getDevicePositionsStream {
-    String cookie = "JSESSIONID=djwbu6ve4icrh0hxejgbgxni; path=/api;";
+    String cookie = appProvider.getCookie();
+    print(cookie);
     final channel = IOWebSocketChannel.connect("ws://$serverUrl/api/socket", headers: {"Cookie": cookie});
     final posStream = channel.stream;
     StreamSubscription<dynamic> rawPosSub;
@@ -67,7 +69,6 @@ class TraccarClientService {
       }
     });
     return streamController.stream;
-    // return posStream;
   }
 
   // Get All Devices of current User //
@@ -239,9 +240,9 @@ class TraccarClientService {
   }
 
   // @description Refresh session cookie of monarchtrack server
-  static Future<String> getMonarchTrackServerCookie({bool refreshCookie = false}) async {
+  static Future<String> getMonarchTrackServerCookie() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String rawCookie = refreshCookie ? null : sharedPreferences.getString(kMonarchTrackCookieKey);
+    String rawCookie = sharedPreferences.getString(kMonarchTrackCookieKey);
     if (rawCookie == null) {
       var url = monarchTrackApiUrl + '/session';
       var payLoad = jsonEncode({
@@ -268,6 +269,7 @@ class TraccarClientService {
 
   // @description Generate Tracker Link
   static Future<String> generateTrackerLink({int deviceId}) async {
+    print(monarchTrackApiUrl + '/misc/token?deviceId=$deviceId');
     try {
       String token = '';
       String rawCookie = await getMonarchTrackServerCookie();
@@ -283,7 +285,7 @@ class TraccarClientService {
         token = jsonDecode(trackApiResponse.body)['token'];
         print(token);
       }
-      return monarchTrackWebUrl + '/track?token=$token';
+      return monarchTrackWebUrl + '/track/$token';
     } catch (error) {
       throw Exception(error);
     }

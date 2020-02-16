@@ -152,8 +152,30 @@ class _DevicesScreenState extends State<DevicesScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 20),
-                    Expanded(child: Text(item.name, style: GoogleFonts.openSans(fontWeight: FontWeight.w400))),
+                    Expanded(
+                      child: ListTile(
+                        title: Text(item.name),
+                        subtitle: Row(
+                          children: <Widget>[
+                            Container(
+                              height: 20,
+                              width: 70,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(30),
+                                color: item.motion == 'stop' ? Colors.red : Colors.blue,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  item.motion,
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 20),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

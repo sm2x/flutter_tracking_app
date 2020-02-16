@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       providers: [ChangeNotifierProvider<AppProvider>(create: (context) => _appProvider)],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Tracking App',
+        title: kAppTitle,
         theme: ThemeData(primaryColor: kLoginBackgroundColor),
         // home: HomePage(),
         initialRoute: '/',

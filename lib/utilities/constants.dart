@@ -34,3 +34,4 @@ const kShareLocationUrl = "http://vt.monarchtrack.com:8085/track";
 const kKmUnit = ' km';
 const kSpeedUnit = ' km/h';
 const kMonarchTrackCookieKey = 'monarchTrackSessionCookie';
+const kAppTitle = "MonarchTrack";

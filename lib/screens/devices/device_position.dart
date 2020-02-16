@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/api_services.dart';
 import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
+import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/common/button_container.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_tracking_app/widgets/common/snapping_sheet.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -312,6 +314,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   Widget build(BuildContext context) {
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
     _deviceInfo = args["deviceInfo"];
+    AppProvider appProvider = Provider.of<AppProvider>(context);
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,
@@ -345,11 +348,12 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         ],
       ),
       body: StreamBuilder(
-        stream: TraccarClientService().getDevicePositionsStream,
+        stream: TraccarClientService(appProvider: appProvider).getDevicePositionsStream,
         builder: (BuildContext context, AsyncSnapshot snapShot) {
           if (snapShot.hasData) {
             DeviceCustomModel data = snapShot.data;
             if (data.device.id == _deviceInfo.id) {
+              print(data.position.date.toString());
               _devices.add(data);
               _lastSpeed = data.position.geoPoint.speed;
               _lastPositionData = data;
@@ -424,99 +428,33 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: <Widget>[
-              Expanded(
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      FontAwesomeIcons.tachometerAlt,
-                      // color: Colors.white,
-                      size: 20,
-                    ),
-                    SizedBox(width: 5),
-                    Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '',
-                        style: TextStyle(fontSize: 13)),
-                  ],
-                ),
+              Row(
+                children: <Widget>[
+                  Icon(
+                    FontAwesomeIcons.tachometerAlt,
+                    // color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: 5),
+                  Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '',
+                      style: TextStyle(fontSize: 13)),
+                ],
               ),
-              Expanded(
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      FontAwesomeIcons.key,
-                      // color: Colors.white,
-                      size: 20,
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      _deviceAttributes.ignition != null ? _deviceAttributes.ignition ? 'On' : 'Off' : 'Off',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                  ],
-                ),
+              SizedBox(width: 20),
+              Row(
+                children: <Widget>[
+                  Icon(
+                    FontAwesomeIcons.key,
+                    // color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: 5),
+                  Text(
+                    _deviceAttributes.ignition != null ? _deviceAttributes.ignition ? 'On' : 'Off' : 'Off',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ],
               )
-            ],
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _speedWidget() {
-    return Positioned(
-      top: 10,
-      left: 10,
-      child: Container(
-        height: 50,
-        width: 50,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
-          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
-        ]),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: <Widget>[
-              Icon(
-                FontAwesomeIcons.tachometerAlt,
-                color: Colors.white,
-                size: 20,
-              ),
-              SizedBox(height: 1),
-              Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '',
-                  style: TextStyle(fontSize: 11, color: Colors.white)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _ignitionWidget() {
-    return Positioned(
-      top: 70,
-      left: 10,
-      child: Container(
-        height: 50,
-        width: 50,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
-          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
-        ]),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: <Widget>[
-              Icon(
-                FontAwesomeIcons.key,
-                color: Colors.white,
-                size: 20,
-              ),
-              SizedBox(height: 1),
-              Text(
-                _deviceAttributes.ignition != null ? _deviceAttributes.ignition ? 'On' : 'Off' : 'Off',
-                style: TextStyle(fontSize: 11, color: Colors.white),
-              ),
             ],
           ),
         ),
@@ -539,12 +477,6 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         child: InkWell(
           onTap: () async {
             createLoadingDialog(context);
-            //Generating Tracker Link
-            // String sharingUrl = await TraccarClientService.generateTrackerLink(deviceId: _deviceInfo.id);
-            // if (sharingUrl != null) {
-            //   print(sharingUrl);
-            //   Share.share(sharingUrl, subject: 'Track Ride Online');
-            // }
           },
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -655,11 +587,14 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                   ),
                 )
               : Text(''),
-          _sheetWidgetChild(
-            leading: FontAwesomeIcons.tachometerAlt,
-            title: Text('Odometer'),
-            subtitle: Text(_deviceAttributes != null ? _deviceAttributes.odometer.toString() + kKmUnit : ''),
-          ),
+          _deviceAttributes != null
+              ? _sheetWidgetChild(
+                  leading: FontAwesomeIcons.tachometerAlt,
+                  title: Text('Odometer'),
+                  subtitle:
+                      Text(_deviceAttributes.odometer != null ? _deviceAttributes.odometer.toString() + kKmUnit : ''),
+                )
+              : Text(''),
         ],
       ),
     );

@@ -11,6 +11,7 @@ class AppProvider with ChangeNotifier {
   int homeActiveTabIndex = 2;
   User user = new User();
   List<DeviceCustomModel> _devices = [];
+  String _apiCookie;
 
   //loggedIn Updates
   Future setLoggedIn({bool status}) async {
@@ -45,6 +46,12 @@ class AppProvider with ChangeNotifier {
   List<DeviceCustomModel> getDevices() => _devices;
   setDevices(List<Device> devices) {
     _devices = devices;
+    notifyListeners();
+  }
+
+  String getCookie() => _apiCookie;
+  setCookie({String apiCookie}) {
+    _apiCookie = apiCookie;
     notifyListeners();
   }
 }

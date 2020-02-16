@@ -8,6 +8,7 @@ import 'package:flutter_tracking_app/screens/devices/devices.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/common/button_container.dart';
+import 'package:flutter_tracking_app/widgets/custom_loader.dart';
 import 'package:flutter_tracking_app/widgets/layouts/drawer.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -95,34 +96,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             }
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        FontAwesomeIcons.mapMarkerAlt,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        kCompanyName,
-                        style: GoogleFonts.pacifico(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.5,
-                            color: Theme.of(context).primaryColor),
-                      ),
-                    ],
-                  ),
-                  CircularProgressIndicator(
-                    strokeWidth: 2.0,
-                  ),
-                ],
-              ),
-            );
+            return CustomLoader();
           }),
       drawer: DrawerLayout(),
     );

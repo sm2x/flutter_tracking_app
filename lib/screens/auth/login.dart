@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/api_services.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/screens/home/home_page.dart';
+import 'package:flutter_tracking_app/widgets/custom_loader.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/auth/persistant-footer-buttons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -19,12 +21,15 @@ class Login extends StatefulWidget {
 class _LoginLayoutState extends State<Login> {
   AppProvider _appProvider;
   TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0);
-  final userNameController = TextEditingController(text: 'admin');
-  final passwordController = TextEditingController(text: 'monarch@account14');
+  final userNameController = TextEditingController();
+  final passwordController = TextEditingController();
   bool _loading = false;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
   bool _invalidCredentials = false;
+  String apiCookie;
+  String username;
+  String password;
 
   //Signin Icon
   Widget signinIcon() {
@@ -75,12 +80,12 @@ class _LoginLayoutState extends State<Login> {
               final username = userNameController.text;
               final password = passwordController.text;
               await TraccarClientService(appProvider: _appProvider).login(username: username, password: password);
-              CommonFunctions.showSuccess(_scaffoldKey, username + "  " + password);
               setState(() => _loading = false);
               await _appProvider.setLoggedIn(status: true);
               Navigator.popAndPushNamed(context, '/Home');
             }
           } catch (error) {
+            print(error);
             CommonFunctions.showError(_scaffoldKey, 'Unauthorized');
             setState(() => _loading = false);
           }
@@ -97,6 +102,15 @@ class _LoginLayoutState extends State<Login> {
     return true;
   }
 
+  //Get Cookie From sharedPreferences
+  Future getSharedPrefrences() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    apiCookie = sharedPreferences.getString(kCookieKey);
+    username = sharedPreferences.getString('username');
+    password = sharedPreferences.getString('password');
+    return Future.value();
+  }
+
   // Build Method //
   @override
   Widget build(BuildContext context) {
@@ -106,8 +120,7 @@ class _LoginLayoutState extends State<Login> {
       body = Scaffold(
         backgroundColor: kLoginBackgroundColor,
         key: _scaffoldKey,
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        body: ListView(
           children: <Widget>[
             _singleChildScrollView(),
           ],
@@ -118,6 +131,33 @@ class _LoginLayoutState extends State<Login> {
       body = HomePage();
     }
     return body;
+    // Widget loginWidget = Scaffold(
+    //   backgroundColor: kLoginBackgroundColor,
+    //   key: _scaffoldKey,
+    //   body: Column(
+    //     mainAxisAlignment: MainAxisAlignment.center,
+    //     children: <Widget>[
+    //       _singleChildScrollView(),
+    //     ],
+    //   ),
+    //   persistentFooterButtons: FooterButtons(Colors.white).getFooterButtons(context),
+    // );
+    // body = FutureBuilder(
+    //   future: getCookie(),
+    //   builder: (context, snapshot) {
+    //     if (snapshot.connectionState == ConnectionState.done) {
+    //       print(snapshot.data);
+    //       String cookie = snapshot.data;
+    //       if (cookie != null) {
+    //         return Text(cookie);
+    //       } else {
+    //         return loginWidget;
+    //       }
+    //     }
+    //     return CustomLoader();
+    //   },
+    // );
+    // return body;
   }
 
   // SingleChildScroll View
@@ -134,61 +174,61 @@ class _LoginLayoutState extends State<Login> {
         labelText: 'Password',
       ),
     );
-    return SingleChildScrollView(
-      child: Container(
-        color: kLoginBackgroundColor,
-        child: Stack(
-          children: <Widget>[
-            Form(
-              key: _formKey,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
-                    height: MediaQuery.of(context).size.height - 150,
-                    child: Column(
-                      children: <Widget>[
-                        //Image
-                        _coverImageWidget(),
-                        Padding(
-                          padding: const EdgeInsets.all(36),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              // Text(
-                              //   'Login To Manage Your Fleet',
-                              //   style: GoogleFonts.robotoSlab(
-                              //     fontSize: 20,
-                              //     fontWeight: FontWeight.bold,
-                              //     color: Colors.blueAccent,
-                              //   ),
-                              // ),
-                              // SizedBox(height: 10.0),
-                              usernameField,
-                              SizedBox(height: 5.0),
-                              passwordField,
-                              SizedBox(
-                                height: 20.0,
-                              ),
-                              loginButton(context),
-                            ],
+    return FutureBuilder(
+        future: getSharedPrefrences(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            userNameController.text = username;
+            passwordController.text = password;
+            return SingleChildScrollView(
+              child: Container(
+                color: kLoginBackgroundColor,
+                child: Stack(
+                  children: <Widget>[
+                    Form(
+                      key: _formKey,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
+                            height: MediaQuery.of(context).size.height - 150,
+                            child: Column(
+                              children: <Widget>[
+                                //Image
+                                _coverImageWidget(),
+                                Padding(
+                                  padding: const EdgeInsets.all(36),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: <Widget>[
+                                      usernameField,
+                                      SizedBox(height: 5.0),
+                                      passwordField,
+                                      SizedBox(
+                                        height: 20.0,
+                                      ),
+                                      loginButton(context),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+            );
+          }
+          return CustomLoader();
+        });
   }
 
   Widget _coverImageWidget() {

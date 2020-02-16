@@ -7,8 +7,8 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="flutter_tracking_app"
-        android:icon="@mipmap/ic_launcher">
+        android:label="MonarchTrack"
+        android:icon="@drawable/icon">
         <meta-data android:name="com.google.android.geo.API_KEY" 
             android:value="AIzaSyBXr9t0F7gkAedIJLC2pIn_sae1iGSDLmM"/>
         <activity
