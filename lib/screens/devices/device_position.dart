@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
+import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
@@ -16,6 +18,7 @@ import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
+import 'package:http/http.dart' as http;
 
 const LatLng SOURCE_LOCATION = LatLng(33.533297, 73.089087);
 
@@ -271,6 +274,22 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         });
   }
 
+  Future<void> createLoadingDialog(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(
+              'Generating Tracker Link',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            content: Container(
+              child: LinearProgressIndicator(),
+            ),
+          );
+        });
+  }
+
   // Build Method //
   @override
   Widget build(BuildContext context) {
@@ -450,8 +469,25 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         ]),
         child: InkWell(
           onTap: () async {
+            createLoadingDialog(context);
+            //Generating Tracker Link
             String token = (await SharedPreferences.getInstance()).getString(kTokenKey);
-            Share.share(kShareLocationUrl + '?token=' + token, subject: 'Sharing Location');
+            SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+            var payLoad = Map<String, dynamic>();
+            payLoad['username'] = sharedPreferences.getString('username');
+            payLoad['password'] = sharedPreferences.getString('password');
+            var response = http.post(
+              monarchTrackApiUrl + '/session',
+              body: payLoad,
+              headers: {'Content-Type': 'application/json'},
+            ).then((session) {
+              http.post(monarchTrackApiUrl + '/misc/token?deviceId=' + _deviceInfo.id.toString(),
+                  headers: {'Content-Type': 'application/json'}).then((token) {
+                var trackerToken = jsonDecode(token.body)["token"];
+                print(monarchTrackApiUrl + '/track/$trackerToken');
+                Share.share(monarchTrackApiUrl + '/track/$trackerToken', subject: 'Sharing Location');
+              });
+            });
           },
           child: Padding(
             padding: const EdgeInsets.all(8.0),

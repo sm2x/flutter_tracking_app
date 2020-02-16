@@ -36,6 +36,8 @@ class TraccarClientService {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     sharedPreferences.setString(kCookieKey, cookie);
     sharedPreferences.setString(kTokenKey, data.token);
+    sharedPreferences.setString('username', username);
+    sharedPreferences.setString('password', password);
     // _appProvider.setLoggedIn(status: true);
     return data;
   }
