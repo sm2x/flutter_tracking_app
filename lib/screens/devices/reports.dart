@@ -4,7 +4,6 @@ import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -19,8 +18,6 @@ class _ReportsState extends State<Reports> {
   DeviceCustomModel _selectedDevice;
   DateTime _fromDate = DateTime.now();
   DateTime _toDate = DateTime.now();
-  TextEditingController _fromController = new TextEditingController();
-  TextEditingController _toController = new TextEditingController();
   final dateTimeFormat = DateFormat("yyyy-MM-dd HH:mm");
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -29,9 +26,11 @@ class _ReportsState extends State<Reports> {
     AppProvider appProvider = Provider.of<AppProvider>(context);
     _devices = appProvider.getDevices();
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
-    _selectedDevice = args["deviceInfo"];
-    _fromDate = args["fromDateTime"];
-    _toDate = args["toDateTime"];
+    if (args != null) {
+      _selectedDevice = args["deviceInfo"];
+      _fromDate = args["fromDateTime"];
+      _toDate = args["toDateTime"];
+    }
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,
@@ -103,7 +102,7 @@ class _ReportsState extends State<Reports> {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      'View activites for selected device in selected time interval',
+                      'View activites of vehicle in selected time interval',
                       style: TextStyle(
                         color: Colors.white,
                       ),
@@ -255,15 +254,14 @@ class _ReportsState extends State<Reports> {
   _validateSubmit() {
     if (_selectedDevice != null && _fromDate != null && _toDate != null) {
       Duration diff = _toDate.difference(_fromDate);
-      if (diff.inHours > 48) {
-        CommonFunctions.showError(_scaffoldKey, 'Maximum 24 hours Interval Allowed');
-      } else {
-        Navigator.pushNamed(context, '/DeviceReport', arguments: {
-          "deviceInfo": _selectedDevice,
-          "fromDateTime": _fromDate,
-          "toDateTime": _toDate,
-        });
-      }
+      // if (diff.inHours > 48) {
+      //   CommonFunctions.showError(_scaffoldKey, 'Maximum 24 hours Interval Allowed');
+      // } else {
+      Navigator.pushNamed(context, '/DeviceReport', arguments: {
+        "deviceInfo": _selectedDevice,
+        "fromDateTime": _fromDate,
+        "toDateTime": _toDate,
+      });
     } else {
       CommonFunctions.showError(_scaffoldKey, 'Invalid Parameters');
     }

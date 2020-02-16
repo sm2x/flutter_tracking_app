@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/api-services/api_services.dart';
-import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
@@ -17,10 +15,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:share/share.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:traccar_client/traccar_client.dart';
 import 'package:google_map_polyline/google_map_polyline.dart';
-import 'package:http/http.dart' as http;
 
 const LatLng SOURCE_LOCATION = LatLng(33.533297, 73.089087);
 
