@@ -15,7 +15,7 @@ const kGoogleMapsApiKey = "AIzaSyAaOWBBCIKH6KirngrhnkmyZ3h9PVP9sis";
 
 const kLocalStorageKey = "tracking_app";
 const kCookieKey = "traccarCookie";
-const kRoutePointsLimit = 300;
+const kRoutePointsLimit = 500;
 const kShareAppUrl = "http://vt.monarchtrack.com:8082/";
 const kShareAppSubject = "MonarchTrack App";
 const kLoginWidgetsColor = const Color(0xff42a5f5); //blueish

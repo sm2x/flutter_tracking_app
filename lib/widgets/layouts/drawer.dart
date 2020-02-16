@@ -39,7 +39,7 @@ class DrawerLayout extends StatelessWidget {
                   title: Text('Reports'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, '/Devices');
+                    Navigator.pushNamed(context, '/Reports');
                   },
                 ),
                 ListTile(

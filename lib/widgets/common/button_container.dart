@@ -12,20 +12,17 @@ class ButtonContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Container(
-          height: height,
-          width: width,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: containerColor, boxShadow: [
-            BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
-          ]),
-          child: Center(
-            child: Icon(
-              iconData,
-              color: iconColor,
-              size: 20,
-            ),
+      child: Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: containerColor, boxShadow: [
+          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
+        ]),
+        child: Center(
+          child: Icon(
+            iconData,
+            color: iconColor,
+            size: 20,
           ),
         ),
       ),

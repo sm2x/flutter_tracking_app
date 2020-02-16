@@ -152,6 +152,7 @@ class _HomePageState extends State<HomePage> {
 
   //Custom AppBar
   Widget _customAppBar() {
+    Color foreColor = Colors.white;
     return Positioned(
       top: 10,
       child: Padding(
@@ -160,7 +161,7 @@ class _HomePageState extends State<HomePage> {
           width: MediaQuery.of(context).size.width - 10,
           height: 50,
           decoration: BoxDecoration(
-            color: Theme.of(context).canvasColor,
+            color: Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(color: Colors.grey, blurRadius: 1.5, spreadRadius: 0.2),
@@ -171,8 +172,8 @@ class _HomePageState extends State<HomePage> {
             children: <Widget>[
               IconButton(
                 icon: Icon(
-                  Icons.menu,
-                  color: Theme.of(context).primaryColor,
+                  Icons.blur_on,
+                  color: foreColor,
                 ),
                 onPressed: () {
                   _scaffoldKey.currentState.openDrawer();
@@ -184,23 +185,20 @@ class _HomePageState extends State<HomePage> {
                   children: <Widget>[
                     Icon(
                       FontAwesomeIcons.mapMarkerAlt,
-                      color: Theme.of(context).primaryColor,
+                      color: foreColor,
                     ),
                     SizedBox(width: 8),
                     Text(
                       kCompanyName,
                       style: GoogleFonts.pacifico(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.5,
-                          color: Theme.of(context).primaryColor),
+                          fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: 0.5, color: foreColor),
                     ),
                   ],
                 ),
               ),
               IconButton(
                 icon: Icon(FontAwesomeIcons.signOutAlt, size: 25),
-                color: Theme.of(context).primaryColor,
+                color: foreColor,
                 onPressed: () async {
                   await _appProvider.setLoggedIn(status: false);
                   Navigator.popAndPushNamed(context, '/Login');

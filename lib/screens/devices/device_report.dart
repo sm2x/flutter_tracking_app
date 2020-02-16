@@ -24,13 +24,13 @@ import 'package:http/http.dart' as http;
 
 const LatLng SOURCE_LOCATION = LatLng(33.533297, 73.089087);
 
-class DevicePositionScreen extends StatefulWidget {
-  static const String route = '/DevicePosition';
+class DeviceReport extends StatefulWidget {
+  static const String route = '/DeviceReports';
   @override
-  _DevicePositionScreenState createState() => _DevicePositionScreenState();
+  _DeviceReportState createState() => _DeviceReportState();
 }
 
-class _DevicePositionScreenState extends State<DevicePositionScreen> {
+class _DeviceReportState extends State<DeviceReport> {
   RefreshController _refreshController = RefreshController(initialRefresh: true);
   List<Device> _devices = [];
   Completer<GoogleMapController> _mapController = Completer();
@@ -65,7 +65,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   }
 
   @override
-  void didUpdateWidget(DevicePositionScreen oldWidget) {
+  void didUpdateWidget(DeviceReport oldWidget) {
     super.didUpdateWidget(oldWidget);
   }
 
@@ -78,81 +78,38 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     super.dispose();
   }
 
-  //Get device position against positionId
-  Future<DeviceCustomModel> _getDevicePosition() async {
-    if (_deviceInfo != null) {
-      try {
-        _deviceInfo = await TraccarClientService.getDeviceInfo(deviceId: _deviceInfo.id); //get latest deviceInfo
-        if (_deviceInfo.positionId != null) {
-          try {
-            setState(() => _isLoading = true);
-            _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
-            if (_lastPositionData != null) {
-              _deviceAttributes = _lastPositionData.attributes;
-              lastPosition =
-                  LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
-              _lastUpdated = _lastPositionData.position.date.toLocal();
-              _lastSpeed = _lastPositionData.position.geoPoint.speed;
-              _setMapMarker(_lastPositionData, _deviceInfo);
-              _animateCameraPosition(_lastPositionData);
-            }
-          } catch (error) {
-            _scaffoldKey.currentState
-                .showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
-          }
-        } else {
-          _scaffoldKey.currentState
-              .showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
-        }
-      } catch (error) {
-        _scaffoldKey.currentState
-            .showSnackBar(SnackBar(content: Text('Device Not Found'), duration: Duration(seconds: 3)));
-      }
-    }
-
-    setState(() => _isLoading = false);
-    return _lastPositionData;
-  }
-
-  void _onRefresh(DeviceCustomModel deviceInfo) async {
+  Future _onRefresh(DeviceCustomModel deviceInfo) async {
     _lastHours = _initialHours;
-    await _getDeviceRoutes(deviceInfo);
+    await _getDeviceRoutesForReports(deviceInfo);
     if (_routesList.isNotEmpty) {
       _animateCameraPosition(_lastPositionData);
     }
     _refreshController.refreshCompleted();
   }
 
-  //Get device report Routes
-  Future<void> _getDeviceRoutes(DeviceCustomModel deviceInfo) async {
-    if (_lastHours < 24) {
-      setState(() {
-        _isLoading = true;
-      });
-      List<Device> data = await TraccarClientService().getDeviceRoutes(
-        date: DateTime.now(),
-        since: Duration(hours: _lastHours),
-        deviceInfo: deviceInfo,
-      );
-      if (data.isNotEmpty) {
-        _setPolyLinePoints(data);
-        if (mounted) {
-          setState(() {
-            _devices = data;
-          });
-        }
-      } else {
-        _lastHours += 3;
-        await _getDeviceRoutes(deviceInfo);
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-      });
+  //Get DeviceRoutes for Reports Filter
+  Future<void> _getDeviceRoutesForReports(DeviceCustomModel deviceInfo) async {
+    setState(() => _isLoading = true);
+    Duration dateTimeDiff = _toDateTimeFilter.difference(_fromDateTimeFilter);
+    List<Device> data = await TraccarClientService().getDeviceRoutes(
+      date: _toDateTimeFilter,
+      since: Duration(hours: dateTimeDiff.inHours),
+      deviceInfo: deviceInfo,
+    );
+    if (data.isNotEmpty) {
+      _lastPositionData = data.last;
+      _deviceAttributes = _lastPositionData.attributes;
+      lastPosition =
+          LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+      _lastUpdated = _lastPositionData.position.date.toLocal();
+      _lastSpeed = _lastPositionData.position.geoPoint.speed;
+      print(data.length);
+      _setPolyLinePoints(data);
+      setState(() => _isLoading = false);
     } else {
       setState(() => _isLoading = false);
       _scaffoldKey.currentState.showSnackBar(SnackBar(
-        content: Text("No Activity Since $_lastHours hrs"),
+        content: Text("No Activity Since ${dateTimeDiff.inHours} hrs"),
         duration: Duration(seconds: 3),
       ));
     }
@@ -174,8 +131,14 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         points: _points,
         width: 3,
       );
+
+      // add the constructed polyline as a set of points
+      // to the polyline set, which will eventually
+      // end up showing up on the map
       _polylines.add(polyline);
     }
+    print('route-list:' + _routesList.length.toString());
+    print('polylines:' + _mapPolylines.length.toString());
     if (_points.isNotEmpty) {
       lastPosition = _points.last;
       _setMapMarker(data.last, _deviceInfo);
@@ -346,34 +309,10 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           ),
         ],
       ),
-      body: StreamBuilder(
-        stream: TraccarClientService(appProvider: appProvider).getDevicePositionsStream,
-        builder: (BuildContext context, AsyncSnapshot snapShot) {
-          if (snapShot.hasData) {
-            DeviceCustomModel data = snapShot.data;
-            if (data.device.id == _deviceInfo.id) {
-              print(data.position.date.toString());
-              _devices.add(data);
-              _lastSpeed = data.position.geoPoint.speed;
-              _lastPositionData = data;
-              _deviceAttributes = _lastPositionData.attributes;
-              _setPolyLinePoints(_devices);
-              _setMapMarker(data, _deviceInfo);
-              if (_mapController.isCompleted) {
-                return Column(
-                  children: <Widget>[
-                    _renderMap(_deviceInfo),
-                  ],
-                );
-              }
-            }
-          }
-          return Column(
-            children: <Widget>[
-              _renderMap(_deviceInfo),
-            ],
-          );
-        },
+      body: Column(
+        children: <Widget>[
+          _renderMap(_deviceInfo),
+        ],
       ),
     );
   }
@@ -390,23 +329,19 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
               onMapCreated: (GoogleMapController controller) async {
                 if (!_mapController.isCompleted) {
                   _mapController.complete(controller);
-                  await _getDevicePosition();
-                  _onRefresh(deviceInfo);
+                  //await _getDevicePosition();
+                  await _onRefresh(deviceInfo);
                 }
               },
               onCameraMove: _onCameraMove,
               markers: Set<Marker>.of(_markers.values),
               // polylines: Set<Polyline>.of(_mapPolylines.values),
               polylines: _polylines,
-              // circles: {_markerCircle},
             ),
             _speedIgnitionContainer(),
             _refreshButtonOnMap(deviceInfo),
             _loaderOnMap(),
-            //_speedWidget(),
-            //_ignitionWidget(),
             _shareLocationWidget(),
-            _reportsButton(),
             _snappingSheetWidget(),
           ],
         ),
@@ -463,10 +398,9 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
     );
   }
 
-  //Share Location Widget
   Widget _shareLocationWidget() {
     return Positioned(
-      bottom: 130,
+      bottom: 60,
       left: 10,
       child: Container(
         height: 60,
@@ -504,7 +438,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   // Refresh Button Widget
   Widget _refreshButtonOnMap(deviceInfo) {
     return Positioned(
-      bottom: 200,
+      bottom: 130,
       left: 10,
       child: ButtonContainer(
         iconData: Icons.refresh,
@@ -513,43 +447,6 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         width: 60,
         containerColor: Theme.of(context).primaryColor,
         iconColor: Colors.white,
-      ),
-    );
-  }
-
-  Widget _reportsButton() {
-    return Positioned(
-      bottom: 60,
-      left: 10,
-      child: Container(
-        height: 60,
-        width: 60,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
-          BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
-        ]),
-        child: InkWell(
-          onTap: () async {
-            Navigator.pushNamed(context, '/Reports', arguments: {"deviceInfo": _deviceInfo});
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: <Widget>[
-                Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                SizedBox(height: 1),
-                Text(
-                  'Reports',
-                  style: TextStyle(fontSize: 11, color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -573,8 +470,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       top: 70,
       right: 5,
       child: ButtonContainer(
-        iconData: Icons.filter_list,
-        onTap: () => createAlertDialog(context),
+        iconData: Icons.arrow_forward,
+        onTap: () => Navigator.pushNamed(context, '/Reports', arguments: {"deviceInfo": _deviceInfo}),
         height: 50,
         width: 50,
         containerColor: Theme.of(context).primaryColor,
@@ -619,9 +516,9 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                   leading: FontAwesomeIcons.route,
                   title: Text('Route Interval'),
                   subtitle: Text(
-                    DateFormat.jm().format(DateTime.now().subtract(Duration(hours: _lastHours))).toString() +
+                    DateFormat.jm().format(_fromDateTimeFilter).toString() +
                         ' To ' +
-                        DateFormat.jm().format(DateTime.now()).toString(),
+                        DateFormat.jm().format(_toDateTimeFilter).toString(),
                   ),
                 )
               : Text(''),
