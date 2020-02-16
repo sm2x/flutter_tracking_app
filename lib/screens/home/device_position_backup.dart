@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
+import 'package:flutter_tracking_app/api-services/api_services.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';

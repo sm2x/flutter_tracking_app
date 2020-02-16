@@ -12,6 +12,7 @@ import 'package:traccar_client/traccar_client.dart';
 import 'package:pedantic/pedantic.dart';
 import 'package:dio/dio.dart';
 import 'package:web_socket_channel/io.dart';
+import 'package:http/http.dart' as http;
 
 class TraccarClientService {
   final _dio = Dio();
@@ -234,6 +235,57 @@ class TraccarClientService {
       return deviceInfo;
     } else {
       throw Exception("Unexpected Happened !");
+    }
+  }
+
+  // @description Refresh session cookie of monarchtrack server
+  static Future<String> getMonarchTrackServerCookie({bool refreshCookie = false}) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    String rawCookie = refreshCookie ? null : sharedPreferences.getString(kMonarchTrackCookieKey);
+    if (rawCookie == null) {
+      var url = monarchTrackApiUrl + '/session';
+      var payLoad = jsonEncode({
+        'username': sharedPreferences.getString('username'),
+        'password': sharedPreferences.getString('password'),
+      });
+      try {
+        var response = await http.post(
+          url,
+          body: payLoad,
+          headers: {
+            HttpHeaders.contentTypeHeader: 'application/json',
+            HttpHeaders.acceptHeader: 'application/json',
+          },
+        );
+        String rawCookie = response.headers["set-cookie"];
+        return rawCookie;
+      } catch (error) {
+        throw Exception(error);
+      }
+    }
+    return rawCookie;
+  }
+
+  // @description Generate Tracker Link
+  static Future<String> generateTrackerLink({int deviceId}) async {
+    try {
+      String token = '';
+      String rawCookie = await getMonarchTrackServerCookie();
+      var trackApiResponse = await http.post(
+        monarchTrackApiUrl + '/misc/token?deviceId=$deviceId',
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+          HttpHeaders.acceptHeader: 'application/json',
+          HttpHeaders.cookieHeader: rawCookie
+        },
+      );
+      if (trackApiResponse != null) {
+        token = jsonDecode(trackApiResponse.body)['token'];
+        print(token);
+      }
+      return monarchTrackWebUrl + '/track?token=$token';
+    } catch (error) {
+      throw Exception(error);
     }
   }
 }

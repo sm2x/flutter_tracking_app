@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tracking_app/api-services/traccar_client.service.dart';
+import 'package:flutter_tracking_app/api-services/api_services.dart';
 import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/utilities/common_functions.dart';
@@ -279,13 +279,30 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         context: context,
         builder: (context) {
           return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
             title: Text(
               'Generating Tracker Link',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
-            content: Container(
-              child: LinearProgressIndicator(),
-            ),
+            content: FutureBuilder(
+                future: TraccarClientService.generateTrackerLink(deviceId: _deviceInfo.id),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    String sharingUrl = snapshot.data;
+                    if (sharingUrl != null) {
+                      print(sharingUrl);
+                      Share.share(sharingUrl, subject: 'Track Ride Online').then((res) {
+                        Navigator.pop(context);
+                      });
+                    } else {
+                      Navigator.pop(context);
+                      CommonFunctions.showError(_scaffoldKey, "Couldn't fetch link !");
+                    }
+                  }
+                  return Container(
+                    child: LinearProgressIndicator(),
+                  );
+                }),
           );
         });
   }
@@ -379,15 +396,67 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
               polylines: Set<Polyline>.of(_mapPolylines.values),
               // circles: {_markerCircle},
             ),
-            //Refresh Widget
+            _speedIgnitionContainer(),
             _refreshButtonOnMap(deviceInfo),
-            // _filtersButton(),
             _loaderOnMap(),
-            _speedWidget(),
-            _ignitionWidget(),
+            //_speedWidget(),
+            //_ignitionWidget(),
             _shareLocationWidget(),
             _snappingSheetWidget(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _speedIgnitionContainer() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Container(
+        height: 40,
+        width: MediaQuery.of(context).size.width / 2.3,
+        decoration:
+            BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).canvasColor, boxShadow: [
+          BoxShadow(color: Colors.grey, blurRadius: 0.2),
+          BoxShadow(color: Colors.grey, blurRadius: 0.2),
+        ]),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      FontAwesomeIcons.tachometerAlt,
+                      // color: Colors.white,
+                      size: 20,
+                    ),
+                    SizedBox(width: 5),
+                    Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '',
+                        style: TextStyle(fontSize: 13)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      FontAwesomeIcons.key,
+                      // color: Colors.white,
+                      size: 20,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      _deviceAttributes.ignition != null ? _deviceAttributes.ignition ? 'On' : 'Off' : 'Off',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+              )
+            ],
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
         ),
       ),
     );
@@ -458,7 +527,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   //Share Location Widget
   Widget _shareLocationWidget() {
     return Positioned(
-      top: 130,
+      top: 60,
       left: 10,
       child: Container(
         height: 50,
@@ -471,23 +540,11 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           onTap: () async {
             createLoadingDialog(context);
             //Generating Tracker Link
-            String token = (await SharedPreferences.getInstance()).getString(kTokenKey);
-            SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-            var payLoad = Map<String, dynamic>();
-            payLoad['username'] = sharedPreferences.getString('username');
-            payLoad['password'] = sharedPreferences.getString('password');
-            var response = http.post(
-              monarchTrackApiUrl + '/session',
-              body: payLoad,
-              headers: {'Content-Type': 'application/json'},
-            ).then((session) {
-              http.post(monarchTrackApiUrl + '/misc/token?deviceId=' + _deviceInfo.id.toString(),
-                  headers: {'Content-Type': 'application/json'}).then((token) {
-                var trackerToken = jsonDecode(token.body)["token"];
-                print(monarchTrackApiUrl + '/track/$trackerToken');
-                Share.share(monarchTrackApiUrl + '/track/$trackerToken', subject: 'Sharing Location');
-              });
-            });
+            // String sharingUrl = await TraccarClientService.generateTrackerLink(deviceId: _deviceInfo.id);
+            // if (sharingUrl != null) {
+            //   print(sharingUrl);
+            //   Share.share(sharingUrl, subject: 'Track Ride Online');
+            // }
           },
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -514,7 +571,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   // Refresh Button Widget
   Widget _refreshButtonOnMap(deviceInfo) {
     return Positioned(
-      top: 10,
+      top: 60,
       right: 4,
       child: ButtonContainer(
         iconData: Icons.refresh,
