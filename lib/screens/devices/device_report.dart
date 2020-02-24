@@ -95,8 +95,7 @@ class _DeviceReportState extends State<DeviceReport> {
     if (data.isNotEmpty) {
       _lastPositionData = data.last;
       _deviceAttributes = _lastPositionData.attributes;
-      lastPosition =
-          LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+      lastPosition = LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
       _lastUpdated = _lastPositionData.position.date.toLocal();
       _lastSpeed = _lastPositionData.position.geoPoint.speed;
       print(data.length);
@@ -143,7 +142,8 @@ class _DeviceReportState extends State<DeviceReport> {
 
   // Marker set by Stream //
   void _setMapMarker(DeviceCustomModel devicePosition, DeviceCustomModel deviceInfo) async {
-    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: devicePosition, context: context);
+    print('wtf: '+_deviceInfo.category);
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(category: _deviceInfo.category, context: context);
     var position = LatLng(devicePosition.position.geoPoint.latitude, devicePosition.position.geoPoint.longitude);
     MarkerId deviceMarkerId = MarkerId(deviceInfo.id.toString());
     Marker deviceMarker = Marker(
@@ -173,11 +173,8 @@ class _DeviceReportState extends State<DeviceReport> {
   //Animate CameraPosition
   void _animateCameraPosition(DeviceCustomModel devicePosition) async {
     GoogleMapController controller = await _mapController.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: CommonFunctions.getLatLng(devicePosition.position.geoPoint),
-        zoom: _zoomLevel,
-        tilt: _camTilt,
-        bearing: _camBearing)));
+    controller.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(target: CommonFunctions.getLatLng(devicePosition.position.geoPoint), zoom: _zoomLevel, tilt: _camTilt, bearing: _camBearing)));
   }
 
   //On Camera Move
@@ -270,6 +267,7 @@ class _DeviceReportState extends State<DeviceReport> {
   Widget build(BuildContext context) {
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
     _deviceInfo = args["deviceInfo"];
+    print('fk: '+_deviceInfo.category.toString());
     _fromDateTimeFilter = args["fromDateTime"];
     _toDateTimeFilter = args["toDateTime"];
     AppProvider appProvider = Provider.of<AppProvider>(context);
@@ -351,8 +349,7 @@ class _DeviceReportState extends State<DeviceReport> {
       child: Container(
         height: 40,
         width: MediaQuery.of(context).size.width / 2.3,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).canvasColor, boxShadow: [
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).canvasColor, boxShadow: [
           BoxShadow(color: Colors.grey, blurRadius: 0.2),
           BoxShadow(color: Colors.grey, blurRadius: 0.2),
         ]),
@@ -368,8 +365,7 @@ class _DeviceReportState extends State<DeviceReport> {
                     size: 20,
                   ),
                   SizedBox(width: 5),
-                  Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '',
-                      style: TextStyle(fontSize: 13)),
+                  Text(_lastSpeed != null ? _lastSpeed.round().toString() + kSpeedUnit : '', style: TextStyle(fontSize: 13)),
                 ],
               ),
               SizedBox(width: 20),
@@ -401,8 +397,7 @@ class _DeviceReportState extends State<DeviceReport> {
       child: Container(
         height: 60,
         width: 60,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).primaryColor, boxShadow: [
           BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
         ]),
         child: InkWell(
@@ -522,8 +517,7 @@ class _DeviceReportState extends State<DeviceReport> {
               ? _sheetWidgetChild(
                   leading: FontAwesomeIcons.tachometerAlt,
                   title: Text('Odometer'),
-                  subtitle:
-                      Text(_deviceAttributes.odometer != null ? _deviceAttributes.odometer.toString() + kKmUnit : ''),
+                  subtitle: Text(_deviceAttributes.odometer != null ? _deviceAttributes.odometer.toString() + kKmUnit : ''),
                 )
               : Text(''),
         ],

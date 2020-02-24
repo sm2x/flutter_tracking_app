@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tracking_app/animation/fadeAnimation.dart';
 import 'package:flutter_tracking_app/api-services/api_services.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/providers/app_provider.dart';
@@ -35,6 +36,7 @@ class _HomePageState extends State<HomePage> {
   double _zoomLevel = 7.0;
   AppProvider _appProvider;
   List<DeviceCustomModel> _devices = List<DeviceCustomModel>();
+  DeviceCustomModel _currentlySelectedPin;
 
   @override
   void initState() {
@@ -50,6 +52,8 @@ class _HomePageState extends State<HomePage> {
       for (DeviceCustomModel item in positions) {
         int findDeviceIndex = _devices.indexWhere((row) => row.id == item.device.id);
         item.name = _devices[findDeviceIndex].name;
+        _devices[findDeviceIndex].position = item.position;
+        _devices[findDeviceIndex].attributes = item.attributes;
         _setMapMarker(item, _devices[findDeviceIndex].name, _devices[findDeviceIndex]);
       }
     }
@@ -58,18 +62,13 @@ class _HomePageState extends State<HomePage> {
 
   //Set Marker for google map
   void _setMapMarker(DeviceCustomModel devicePosition, String name, DeviceCustomModel deviceInfo) async {
-    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: devicePosition, context: context);
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(category: deviceInfo.category, context: context);
     MarkerId deviceMarkerId = MarkerId(devicePosition.id.toString());
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
       position: LatLng(devicePosition.position.geoPoint.latitude, devicePosition.position.geoPoint.longitude),
-      infoWindow: InfoWindow(
-        title: name.toString(),
-        anchor: Offset(0.5, 0.5),
-        snippet: 'Click For Tracking',
-        onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": deviceInfo}),
-      ),
       icon: pinLocationIcon,
+      onTap: () => setState(() => _currentlySelectedPin = deviceInfo),
     );
     _markers[deviceMarkerId] = deviceMarker;
   }
@@ -91,7 +90,7 @@ class _HomePageState extends State<HomePage> {
                     _customAppBar(),
                     _optionsListView(),
                     _bottomRightButtons(),
-                    _buildContainer(),
+                    _currentlySelectedPin == null ? _buildContainer() : _customInfoWindow(),
                   ],
                 ),
               );
@@ -109,22 +108,106 @@ class _HomePageState extends State<HomePage> {
     var devices = _appProvider.getDevices();
     return Align(
       alignment: Alignment.bottomLeft,
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 20.0),
-        height: 150.0,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: devices.map((item) {
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Boxes(
-                CommonFunctions.getMapIconImageAsset(category: item.category.toString()),
-                33.535090,
-                73.089921,
-                item,
+      child: FadeAnimation(
+        0.7,
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 20.0),
+          height: 130.0,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: devices.map((item) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Boxes(
+                  CommonFunctions.getMapIconImageAsset(category: item.category.toString()),
+                  33.535090,
+                  73.089921,
+                  item,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _customInfoWindow() {
+    Color textColor = Theme.of(context).primaryColor;
+    TextStyle textStyle = TextStyle(color: kThemeContrastColor, fontSize: 11);
+    return Align(
+      alignment: Alignment.bottomLeft,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+        child: FadeAnimation(
+          0.7,
+          Material(
+            elevation: 14.0,
+            borderRadius: BorderRadius.circular(40),
+            shadowColor: Color(0x802196F3),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(40),
+              onTap: () => Navigator.pushNamed(context, '/DevicePosition', arguments: {"deviceInfo": _currentlySelectedPin}),
+              child: Container(
+                height: 120,
+                child: Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Row(
+                    children: <Widget>[
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          ClipOval(
+                            child: Image(
+                                height: 50,
+                                image: AssetImage(
+                                  CommonFunctions.getMapIconImageAsset(category: _currentlySelectedPin.category),
+                                ),
+                                fit: BoxFit.fill),
+                          ),
+                          SizedBox(height: 10),
+                          Container(
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Colors.blue),
+                            height: 18,
+                            width: 60,
+                            child: Center(child: Text('Track', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white))),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: ListView(
+                          // crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Flexible(child: Text(_currentlySelectedPin.name, style: TextStyle(color: textColor, fontSize: 13))),
+                              ],
+                            ),
+                            Divider(),
+                            Text('Cell No: ' + _currentlySelectedPin.phone.toString(), style: textStyle),
+                            SizedBox(height: 5),
+                            _currentlySelectedPin.category != null
+                                ? Text('Category: ' + _currentlySelectedPin.category, style: textStyle)
+                                : kEmptyWidget,
+                            SizedBox(height: 5),
+                            _currentlySelectedPin.attributes != null
+                                ? Text('Odometer: ' + CommonFunctions.getOdometerString(odometer: _currentlySelectedPin.attributes.odometer),
+                                    style: textStyle)
+                                : kEmptyWidget,
+                            SizedBox(height: 5),
+                            _currentlySelectedPin.attributes != null
+                                ? Text('Status: ' + CommonFunctions.getMotion(motion: _currentlySelectedPin.motion), style: textStyle)
+                                : kEmptyWidget,
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
               ),
-            );
-          }).toList(),
+            ),
+          ),
         ),
       ),
     );
@@ -146,6 +229,9 @@ class _HomePageState extends State<HomePage> {
           }
         },
         markers: Set<Marker>.of(_markers.values),
+        onTap: (latLang) {
+          setState(() => _currentlySelectedPin = null);
+        },
       ),
     );
   }
@@ -190,8 +276,7 @@ class _HomePageState extends State<HomePage> {
                     SizedBox(width: 8),
                     Text(
                       kCompanyName,
-                      style: GoogleFonts.pacifico(
-                          fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: 0.5, color: foreColor),
+                      style: GoogleFonts.pacifico(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: 0.5, color: foreColor),
                     ),
                   ],
                 ),
@@ -200,8 +285,7 @@ class _HomePageState extends State<HomePage> {
                 icon: Icon(FontAwesomeIcons.signOutAlt, size: 25),
                 color: foreColor,
                 onPressed: () async {
-                  await _appProvider.setLoggedIn(status: false);
-                  Navigator.popAndPushNamed(context, '/Login');
+                  await TraccarClientService(appProvider: _appProvider).logout(context: context);
                 },
               )
             ],

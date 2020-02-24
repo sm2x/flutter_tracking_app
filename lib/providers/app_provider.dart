@@ -12,6 +12,7 @@ class AppProvider with ChangeNotifier {
   User user = new User();
   List<DeviceCustomModel> _devices = [];
   String _apiCookie;
+  bool rememberMe;
 
   //loggedIn Updates
   Future setLoggedIn({bool status}) async {

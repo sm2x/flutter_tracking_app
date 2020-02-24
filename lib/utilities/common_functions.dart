@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
+import 'package:flutter_tracking_app/utilities/constants.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 
@@ -15,11 +18,17 @@ class CommonFunctions {
       case 'pickup':
         mapDescriptor = "assets/images/pickup_transparent.png";
         break;
-      case 'bike':
+      case 'motorcycle':
         mapDescriptor = "assets/images/bike_transparent.png";
         break;
       case 'offroad':
         mapDescriptor = "assets/images/offroad.png";
+        break;
+      case 'truck':
+        mapDescriptor = "assets/images/truck_transparent.png";
+        break;
+      case 'van':
+        mapDescriptor = "assets/images/van_transparent.png";
         break;
       default:
         mapDescriptor = "assets/images/car_transparent.png";
@@ -28,15 +37,43 @@ class CommonFunctions {
     return mapDescriptor;
   }
 
+  static String getImageForMarker({String category}) {
+    String mapDescriptor;
+    switch (category) {
+      case 'car':
+        mapDescriptor = "assets/images/map/car.png";
+        break;
+      case 'pickup':
+        mapDescriptor = "assets/images/map/pickup.png";
+        break;
+      case 'motorcycle':
+        mapDescriptor = "assets/images/map/bike.png";
+        break;
+      case 'offroad':
+        mapDescriptor = "assets/images/map/pickup.png";
+        break;
+      case 'truck':
+        mapDescriptor = "assets/images/map/truck.png";
+        break;
+      case 'van':
+        mapDescriptor = "assets/images/map/van.png";
+        break;
+      default:
+        mapDescriptor = "assets/images/map/car.png";
+        break;
+    }
+    return mapDescriptor;
+  }
+
   /* 
    * Get customMapMarker BitmapDescriptor device-category wise 
    */
-  Future<BitmapDescriptor> getCustomMarker({DeviceCustomModel deviceInfo, BuildContext context}) async {
-    // String imgAsset = CommonFunctions.getMapIconImageAsset(category: deviceInfo.category.toString());
-    // ByteData byteData = await DefaultAssetBundle.of(context).load(imgAsset);
-    // Uint8List imageData = byteData.buffer.asUint8List();
-    // BitmapDescriptor bitmapDescriptor = BitmapDescriptor.fromBytes(imageData);
-    BitmapDescriptor bitmapDescriptor = BitmapDescriptor.defaultMarker;
+  Future<BitmapDescriptor> getCustomMarker({String category, BuildContext context}) async {
+    String imgAsset = CommonFunctions.getImageForMarker(category: category.toString());
+    ByteData byteData = await DefaultAssetBundle.of(context).load(imgAsset);
+    Uint8List imageData = byteData.buffer.asUint8List();
+    BitmapDescriptor bitmapDescriptor = BitmapDescriptor.fromBytes(imageData);
+    // BitmapDescriptor bitmapDescriptor = BitmapDescriptor.defaultMarker;
     return bitmapDescriptor;
   }
 
@@ -52,6 +89,9 @@ class CommonFunctions {
         break;
       case 'bike':
         iconData = Icons.motorcycle;
+        break;
+      case 'van':
+        iconData = FontAwesomeIcons.shuttleVan;
         break;
       default:
         iconData = Icons.directions_car;
@@ -99,5 +139,10 @@ class CommonFunctions {
   //Label for Device Motion
   static String getMotion({String motion}) {
     return motion == 'moving' ? 'Moving' : 'Stopped';
+  }
+
+  //Label for Device Odometer
+  static String getOdometerString({int odometer}) {
+    return odometer == null ? 'not availble' : odometer.toString() + kKmUnit;
   }
 }

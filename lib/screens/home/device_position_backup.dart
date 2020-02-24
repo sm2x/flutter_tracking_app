@@ -75,8 +75,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         setState(() => _isLoading = true);
         _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
         if (_lastPositionData != null) {
-          lastPosition =
-              LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+          lastPosition = LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
           _lastUpdated = _lastPositionData.position.date.toLocal();
           _lastSpeed = _lastPositionData.position.geoPoint.speed;
           // _setMapMarker(lastPosition);
@@ -85,12 +84,10 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
           setState(() {});
         }
       } catch (error) {
-        _scaffoldKey.currentState
-            .showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
+        _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
       }
     } else {
-      _scaffoldKey.currentState
-          .showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
     }
     setState(() => _isLoading = false);
     return _lastPositionData;
@@ -166,8 +163,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
         _routesList.add(route);
         // create polyLine objects
         PolylineId pId = PolylineId(route.id.toString());
-        Polyline polyline =
-            Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
+        Polyline polyline = Polyline(polylineId: pId, points: _points, width: 3, color: Colors.red, consumeTapEvents: true);
         _mapPolylines[pId] = polyline;
       }
       print(_mapPolylines.length.toString());
@@ -180,17 +176,15 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
 
   //Set Marker for google map
   void _setMapMarker(LatLng position) async {
-    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: _deviceInfo, context: context);
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(category: _deviceInfo.category, context: context);
     print(_deviceInfo.category);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
       markerId: deviceMarkerId,
       position: position,
       onTap: () {},
-      infoWindow: InfoWindow(
-          title: _deviceInfo.name.toString(),
-          anchor: Offset(0.5, 0.5),
-          snippet: CommonFunctions.formatDateTime(_lastUpdated).toString()),
+      infoWindow:
+          InfoWindow(title: _deviceInfo.name.toString(), anchor: Offset(0.5, 0.5), snippet: CommonFunctions.formatDateTime(_lastUpdated).toString()),
       icon: pinLocationIcon,
     );
     _markers[deviceMarkerId] = deviceMarker;
@@ -199,7 +193,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   // Marker set by Stream //
   void _setMapMarkerByStream(DeviceCustomModel device) async {
     _lastUpdated = device.position.date.toLocal();
-    var pinLocationIcon = await CommonFunctions().getCustomMarker(deviceInfo: device, context: context);
+    var pinLocationIcon = await CommonFunctions().getCustomMarker(category: device.category, context: context);
     var position = LatLng(device.position.geoPoint.latitude, device.position.geoPoint.longitude);
     MarkerId deviceMarkerId = MarkerId(_deviceInfo.id.toString());
     Marker deviceMarker = Marker(
@@ -378,8 +372,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       child: Container(
         height: 60,
         width: 60,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
           BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
         ]),
         child: Padding(
@@ -410,8 +403,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
       child: Container(
         height: 60,
         width: 60,
-        decoration:
-            BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), color: Theme.of(context).canvasColor, boxShadow: [
           BoxShadow(color: Colors.grey, spreadRadius: 0.5, blurRadius: 3.0),
         ]),
         child: Padding(
@@ -500,8 +492,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             child: ListTile(
               leading: Icon(CommonFunctions.getIconData(category: _deviceInfo.category ?? '')),
               title: Text((_deviceInfo.model == null ? 'Category' : _deviceInfo.category.toString())),
-              subtitle:
-                  Text(_deviceInfo.model == null ? _deviceInfo.category.toString() : _deviceInfo.model.toString()),
+              subtitle: Text(_deviceInfo.model == null ? _deviceInfo.category.toString() : _deviceInfo.model.toString()),
             ),
           ),
           //Last Communication
@@ -525,9 +516,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
             child: ListTile(
               leading: Icon(FontAwesomeIcons.tachometerAlt),
               title: Text('Odometer'),
-              subtitle: Text(_lastPositionData != null
-                  ? _lastPositionData.attributes.odometer != null ? _lastPositionData.attributes.odometer : ''
-                  : ''),
+              subtitle:
+                  Text(_lastPositionData != null ? _lastPositionData.attributes.odometer != null ? _lastPositionData.attributes.odometer : '' : ''),
             ),
           )
         ],

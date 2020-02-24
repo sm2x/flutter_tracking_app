@@ -35,3 +35,6 @@ const kKmUnit = ' km';
 const kSpeedUnit = ' km/h';
 const kMonarchTrackCookieKey = 'monarchTrackSessionCookie';
 const kAppTitle = "MonarchTrack";
+Widget kEmptyWidget = Container(width: 0, height: 0);
+const kThemeContrastColor = Color(0xFF64b5f6);
+

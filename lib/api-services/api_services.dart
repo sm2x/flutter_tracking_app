@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/config/config.dart';
 import 'package:flutter_tracking_app/models/device.custom.dart';
 import 'package:flutter_tracking_app/models/user.model.dart';
@@ -35,13 +36,26 @@ class TraccarClientService {
     String cookie = response.headers["set-cookie"][0];
     User data = User.fromJson(response.data as Map<String, dynamic>);
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    sharedPreferences.setString(kCookieKey, cookie);
-    sharedPreferences.setString(kTokenKey, data.token);
-    sharedPreferences.setString('username', username);
-    sharedPreferences.setString('password', password);
+    if (appProvider.rememberMe == true) {
+      sharedPreferences.setString(kCookieKey, cookie);
+      sharedPreferences.setString(kTokenKey, data.token);
+      sharedPreferences.setString('username', username);
+      sharedPreferences.setString('password', password);
+      sharedPreferences.setBool('rememberMe', appProvider.rememberMe);
+    }
     sharedPreferences.setBool('loggedIn', true);
     appProvider.setCookie(apiCookie: cookie);
     return data;
+  }
+
+  // Logout //
+  logout({BuildContext context}) async {
+    appProvider.setLoggedIn(status: false);
+    if (appProvider.rememberMe == false) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs?.clear();
+    }
+    Navigator.popAndPushNamed(context, '/Login');
   }
 
   /*
@@ -49,7 +63,6 @@ class TraccarClientService {
    */
   Stream<Device> get getDevicePositionsStream {
     String cookie = appProvider.getCookie();
-    print(cookie);
     final channel = IOWebSocketChannel.connect("ws://$serverUrl/api/socket", headers: {"Cookie": cookie});
     final posStream = channel.stream;
     StreamSubscription<dynamic> rawPosSub;
@@ -89,7 +102,6 @@ class TraccarClientService {
     if (response.statusCode == 200) {
       final devices = <DeviceCustomModel>[];
       for (final data in response.data) {
-        // print(data);
         var item = DeviceCustomModel.fromJson(data as Map<String, dynamic>);
         devices.add(item);
       }
@@ -114,11 +126,9 @@ class TraccarClientService {
         },
       ),
     );
-    print(response.data);
     if (response.statusCode == 200) {
       final devices = <DeviceCustomModel>[];
       for (final data in response.data) {
-        // print(data);
         var item = DeviceCustomModel.fromJson(data as Map<String, dynamic>);
         devices.add(item);
       }
@@ -175,7 +185,6 @@ class TraccarClientService {
         "Cookie": cookie,
       }),
     );
-    print(response);
     for (final data in response.data) {
       _devicePositions.add(DeviceCustomModel.fromJson(data));
     }
@@ -269,21 +278,21 @@ class TraccarClientService {
 
   // @description Generate Tracker Link
   static Future<String> generateTrackerLink({int deviceId}) async {
-    print(monarchTrackApiUrl + '/misc/token?deviceId=$deviceId');
     try {
       String token = '';
       String rawCookie = await getMonarchTrackServerCookie();
+      var payLoad = jsonEncode({'deviceId': deviceId});
       var trackApiResponse = await http.post(
-        monarchTrackApiUrl + '/misc/token?deviceId=$deviceId',
+        monarchTrackApiUrl + '/misc/token',
         headers: {
           HttpHeaders.contentTypeHeader: 'application/json',
           HttpHeaders.acceptHeader: 'application/json',
           HttpHeaders.cookieHeader: rawCookie
         },
+        body: payLoad,
       );
       if (trackApiResponse != null) {
         token = jsonDecode(trackApiResponse.body)['token'];
-        print(token);
       }
       return monarchTrackWebUrl + '/track/$token';
     } catch (error) {

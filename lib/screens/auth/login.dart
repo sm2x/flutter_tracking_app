@@ -30,6 +30,147 @@ class _LoginLayoutState extends State<Login> {
   String apiCookie;
   String username;
   String password;
+  FocusNode usernameFocus = new FocusNode();
+  FocusNode passwordFocus = new FocusNode();
+  bool _rememberMe = false;
+
+  //Get Cookie From sharedPreferences
+  Future getSharedPrefrences() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    apiCookie = sharedPreferences.getString(kCookieKey);
+    username = sharedPreferences.getString('username');
+    password = sharedPreferences.getString('password');
+    _rememberMe = sharedPreferences.getBool('rememberMe');
+    print('prefs callled');
+    if (_rememberMe == null) {
+      _rememberMe = false;
+    }
+    return Future.value();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getSharedPrefrences().then((data) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        userNameController.text = username;
+        passwordController.text = password;
+        setState(() {});
+      });
+    });
+  }
+
+  // Build Method //
+  @override
+  Widget build(BuildContext context) {
+    _appProvider = Provider.of<AppProvider>(context);
+    Widget body;
+    if (_appProvider.isLoggedIn == false) {
+      body = Scaffold(
+        backgroundColor: kLoginBackgroundColor,
+        key: _scaffoldKey,
+        body: ListView(
+          children: <Widget>[
+            _singleChildScrollView(),
+          ],
+        ),
+        persistentFooterButtons: FooterButtons(Colors.white).getFooterButtons(context),
+      );
+    } else {
+      body = HomePage();
+    }
+    return body;
+  }
+
+  // SingleChildScroll View
+  Widget _singleChildScrollView() {
+    final usernameField = TextField(
+      controller: userNameController,
+      cursorColor: Colors.white,
+      decoration: InputDecoration(labelText: 'Username'),
+      focusNode: usernameFocus,
+      textInputAction: TextInputAction.next,
+      onSubmitted: (value) {
+        usernameFocus.unfocus();
+        FocusScope.of(context).requestFocus(passwordFocus);
+      },
+    );
+    final passwordField = TextField(
+      obscureText: true,
+      controller: passwordController,
+      decoration: InputDecoration(
+        labelText: 'Password',
+      ),
+      textInputAction: TextInputAction.done,
+      focusNode: passwordFocus,
+      onSubmitted: (value) {
+        passwordFocus.unfocus();
+        _submitForm();
+      },
+    );
+    return SingleChildScrollView(
+      child: Container(
+        color: kLoginBackgroundColor,
+        child: Stack(
+          children: <Widget>[
+            Form(
+              key: _formKey,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
+                    height: MediaQuery.of(context).size.height - 150,
+                    child: ListView(
+                      children: <Widget>[
+                        //Image
+                        _coverImageWidget(),
+                        Padding(
+                          padding: const EdgeInsets.all(36),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              usernameField,
+                              SizedBox(height: 5.0),
+                              passwordField,
+                              SizedBox(
+                                height: 5.0,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Checkbox(
+                                    value: _rememberMe,
+                                    onChanged: (value) {
+                                      print('change: ' + value.toString());
+                                      _appProvider.rememberMe = _rememberMe = value;
+                                      setState(() {});
+                                    },
+                                    materialTapTargetSize: MaterialTapTargetSize.values[1],
+                                  ),
+                                  Text('Remember Me', style: TextStyle(color: kLoginWidgetsColor, fontSize: 12)),
+                                ],
+                              ),
+                              SizedBox(height: 5),
+                              loginButton(context),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   //Signin Icon
   Widget signinIcon() {
@@ -73,25 +214,27 @@ class _LoginLayoutState extends State<Login> {
             ],
           ),
         ),
-        onPressed: () async {
-          try {
-            if (_validateSubmit()) {
-              setState(() => _loading = true);
-              final username = userNameController.text;
-              final password = passwordController.text;
-              await TraccarClientService(appProvider: _appProvider).login(username: username, password: password);
-              setState(() => _loading = false);
-              await _appProvider.setLoggedIn(status: true);
-              Navigator.popAndPushNamed(context, '/Home');
-            }
-          } catch (error) {
-            print(error);
-            CommonFunctions.showError(_scaffoldKey, 'Unauthorized');
-            setState(() => _loading = false);
-          }
-        },
+        onPressed: () async => _submitForm(),
       ),
     );
+  }
+
+  _submitForm() async {
+    try {
+      if (_validateSubmit()) {
+        setState(() => _loading = true);
+        final username = userNameController.text;
+        final password = passwordController.text;
+        await TraccarClientService(appProvider: _appProvider).login(username: username, password: password);
+        setState(() => _loading = false);
+        await _appProvider.setLoggedIn(status: true);
+        Navigator.popAndPushNamed(context, '/Home');
+      }
+    } catch (error) {
+      print(error);
+      CommonFunctions.showError(_scaffoldKey, 'Unauthorized');
+      setState(() => _loading = false);
+    }
   }
 
   _validateSubmit() {
@@ -100,135 +243,6 @@ class _LoginLayoutState extends State<Login> {
       return false;
     }
     return true;
-  }
-
-  //Get Cookie From sharedPreferences
-  Future getSharedPrefrences() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    apiCookie = sharedPreferences.getString(kCookieKey);
-    username = sharedPreferences.getString('username');
-    password = sharedPreferences.getString('password');
-    return Future.value();
-  }
-
-  // Build Method //
-  @override
-  Widget build(BuildContext context) {
-    _appProvider = Provider.of<AppProvider>(context);
-    Widget body;
-    if (_appProvider.isLoggedIn == false) {
-      body = Scaffold(
-        backgroundColor: kLoginBackgroundColor,
-        key: _scaffoldKey,
-        body: ListView(
-          children: <Widget>[
-            _singleChildScrollView(),
-          ],
-        ),
-        persistentFooterButtons: FooterButtons(Colors.white).getFooterButtons(context),
-      );
-    } else {
-      body = HomePage();
-    }
-    return body;
-    // Widget loginWidget = Scaffold(
-    //   backgroundColor: kLoginBackgroundColor,
-    //   key: _scaffoldKey,
-    //   body: Column(
-    //     mainAxisAlignment: MainAxisAlignment.center,
-    //     children: <Widget>[
-    //       _singleChildScrollView(),
-    //     ],
-    //   ),
-    //   persistentFooterButtons: FooterButtons(Colors.white).getFooterButtons(context),
-    // );
-    // body = FutureBuilder(
-    //   future: getCookie(),
-    //   builder: (context, snapshot) {
-    //     if (snapshot.connectionState == ConnectionState.done) {
-    //       print(snapshot.data);
-    //       String cookie = snapshot.data;
-    //       if (cookie != null) {
-    //         return Text(cookie);
-    //       } else {
-    //         return loginWidget;
-    //       }
-    //     }
-    //     return CustomLoader();
-    //   },
-    // );
-    // return body;
-  }
-
-  // SingleChildScroll View
-  Widget _singleChildScrollView() {
-    final usernameField = TextFormField(
-      controller: userNameController,
-      cursorColor: Colors.white,
-      decoration: InputDecoration(labelText: 'Username'),
-    );
-    final passwordField = TextFormField(
-      obscureText: true,
-      controller: passwordController,
-      decoration: InputDecoration(
-        labelText: 'Password',
-      ),
-    );
-    return FutureBuilder(
-        future: getSharedPrefrences(),
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            userNameController.text = username;
-            passwordController.text = password;
-            return SingleChildScrollView(
-              child: Container(
-                color: kLoginBackgroundColor,
-                child: Stack(
-                  children: <Widget>[
-                    Form(
-                      key: _formKey,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
-                            height: MediaQuery.of(context).size.height - 150,
-                            child: Column(
-                              children: <Widget>[
-                                //Image
-                                _coverImageWidget(),
-                                Padding(
-                                  padding: const EdgeInsets.all(36),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                      usernameField,
-                                      SizedBox(height: 5.0),
-                                      passwordField,
-                                      SizedBox(
-                                        height: 20.0,
-                                      ),
-                                      loginButton(context),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          return CustomLoader();
-        });
   }
 
   Widget _coverImageWidget() {

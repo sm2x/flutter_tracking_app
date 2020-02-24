@@ -35,7 +35,7 @@ class Boxes extends StatelessWidget {
           child: Material(
               color: Colors.white,
               elevation: 14.0,
-              borderRadius: BorderRadius.circular(24.0),
+              borderRadius: BorderRadius.circular(40),
               shadowColor: Color(0x802196F3),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -68,6 +68,7 @@ class Boxes extends StatelessWidget {
   //Details Container widget
   Widget myDetailsContainer() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
         Padding(

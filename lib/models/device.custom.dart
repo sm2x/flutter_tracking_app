@@ -2,7 +2,7 @@ import 'package:traccar_client/traccar_client.dart';
 
 class DeviceCustomModel extends Device {
   final int id;
-  final DevicePosition position;
+  DevicePosition position;
   final Device device;
   final int positionId;
   final String name;
@@ -12,7 +12,7 @@ class DeviceCustomModel extends Device {
   final String phone;
   final String model;
   final String motion;
-  final DeviceAttributes attributes;
+  DeviceAttributes attributes;
   DeviceCustomModel({
     this.id,
     this.position,

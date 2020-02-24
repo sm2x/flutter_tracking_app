@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tracking_app/api-services/api_services.dart';
+import 'package:flutter_tracking_app/providers/app_provider.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:flutter_tracking_app/widgets/auth/persistant-footer-buttons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:share/share.dart';
 
 class DrawerLayout extends StatelessWidget {
+  AppProvider appProvider;
   @override
   Widget build(BuildContext context) {
+    appProvider = Provider.of<AppProvider>(context);
     return Drawer(
       child: Container(
         color: Colors.white,
@@ -56,9 +61,8 @@ class DrawerLayout extends StatelessWidget {
             ListTile(
               leading: Icon(FontAwesomeIcons.signOutAlt, color: Theme.of(context).primaryColor),
               title: Text('Logout'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/Devices');
+              onTap: () async {
+                await TraccarClientService(appProvider: appProvider).logout(context: context);
               },
             ),
             Divider(),
