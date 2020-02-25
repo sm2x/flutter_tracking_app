@@ -18,9 +18,9 @@ const kCookieKey = "traccarCookie";
 const kRoutePointsLimit = 500;
 const kShareAppUrl = "http://vt.monarchtrack.com:8082/";
 const kShareAppSubject = "MonarchTrack App";
-const kLoginWidgetsColor = const Color(0xff42a5f5); //blueish
+const kLoginWidgetsColor = const Color(0xff304ffe); //blueish
 //const kLoginBackgroundColor = const Color(0xffffffff); //white
-const kLoginBackgroundColor = Colors.purple;
+const kLoginBackgroundColor = const Color(0xFF304ffe);
 
 const kFooterHyperLinkText = "MonarchTrack";
 const kFooterHyperLinkUrl = 'https://monarchtrack.com';
