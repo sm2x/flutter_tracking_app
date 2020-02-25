@@ -42,7 +42,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   DateTime _lastUpdated;
   double _lastSpeed;
   DeviceCustomModel _lastPositionData;
-  double _zoomLevel = 7.0;
+  double _zoomLevel = 14;
   double _camTilt = 0.0;
   double _camBearing = 0.0;
   bool _isLoading = false;

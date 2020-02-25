@@ -42,7 +42,7 @@ class _DeviceReportState extends State<DeviceReport> {
   DateTime _lastUpdated;
   double _lastSpeed;
   DeviceCustomModel _lastPositionData;
-  double _zoomLevel = 7.0;
+  double _zoomLevel = 14;
   double _camTilt = 0.0;
   double _camBearing = 0.0;
   bool _isLoading = false;
@@ -74,6 +74,35 @@ class _DeviceReportState extends State<DeviceReport> {
     super.dispose();
   }
 
+  //Get device position against positionId
+  Future<DeviceCustomModel> _getDevicePosition() async {
+    if (_deviceInfo != null) {
+      try {
+        _deviceInfo = await TraccarClientService.getDeviceInfo(deviceId: _deviceInfo.id); //get latest deviceInfo
+        if (_deviceInfo.positionId != null) {
+          try {
+            _lastPositionData = await TraccarClientService.getPositionFromId(positionId: _deviceInfo.positionId);
+            if (_lastPositionData != null) {
+              _deviceAttributes = _lastPositionData.attributes;
+              lastPosition = LatLng(_lastPositionData.position.geoPoint.latitude, _lastPositionData.position.geoPoint.longitude);
+              _lastUpdated = _lastPositionData.position.date.toLocal();
+              _lastSpeed = _lastPositionData.position.geoPoint.speed;
+              _setMapMarker(_lastPositionData, _deviceInfo);
+              _animateCameraPosition(_lastPositionData);
+            }
+          } catch (error) {
+            _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
+          }
+        } else {
+          _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('No Available Last Position'), duration: Duration(seconds: 3)));
+        }
+      } catch (error) {
+        _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Device Not Found'), duration: Duration(seconds: 3)));
+      }
+    }
+    return _lastPositionData;
+  }
+
   Future _onRefresh(DeviceCustomModel deviceInfo) async {
     _lastHours = _initialHours;
     await _getDeviceRoutesForReports(deviceInfo);
@@ -99,19 +128,22 @@ class _DeviceReportState extends State<DeviceReport> {
       _lastUpdated = _lastPositionData.position.date.toLocal();
       _lastSpeed = _lastPositionData.position.geoPoint.speed;
       print(data.length);
-      _setPolyLinePoints(data);
-      setState(() => _isLoading = false);
+      await _setPolyLinePoints(data);
+      if (mounted) {
+        setState(() {});
+      }
     } else {
-      setState(() => _isLoading = false);
+      await _getDevicePosition();
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         content: Text("No Activity Since ${dateTimeDiff.inHours} hrs"),
         duration: Duration(seconds: 3),
       ));
     }
+    setState(() => _isLoading = false);
   }
 
   //Get PolyLine points from routes
-  void _setPolyLinePoints(List<Device> data) {
+  Future _setPolyLinePoints(List<Device> data) async {
     if (data.length > 0) {
       _points.clear();
       _routesList.clear();
@@ -136,13 +168,12 @@ class _DeviceReportState extends State<DeviceReport> {
     print('polylines:' + _mapPolylines.length.toString());
     if (_points.isNotEmpty) {
       lastPosition = _points.last;
-      _setMapMarker(data.last, _deviceInfo);
+      await _setMapMarker(data.last, _deviceInfo);
     }
   }
 
   // Marker set by Stream //
-  void _setMapMarker(DeviceCustomModel devicePosition, DeviceCustomModel deviceInfo) async {
-    print('wtf: '+_deviceInfo.category);
+  Future _setMapMarker(DeviceCustomModel devicePosition, DeviceCustomModel deviceInfo) async {
     var pinLocationIcon = await CommonFunctions().getCustomMarker(category: _deviceInfo.category, context: context);
     var position = LatLng(devicePosition.position.geoPoint.latitude, devicePosition.position.geoPoint.longitude);
     MarkerId deviceMarkerId = MarkerId(deviceInfo.id.toString());
@@ -173,8 +204,8 @@ class _DeviceReportState extends State<DeviceReport> {
   //Animate CameraPosition
   void _animateCameraPosition(DeviceCustomModel devicePosition) async {
     GoogleMapController controller = await _mapController.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: CommonFunctions.getLatLng(devicePosition.position.geoPoint), zoom: _zoomLevel, tilt: _camTilt, bearing: _camBearing)));
+    controller
+        .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: CommonFunctions.getLatLng(devicePosition.position.geoPoint), zoom: _zoomLevel, tilt: _camTilt, bearing: _camBearing)));
   }
 
   //On Camera Move
@@ -267,7 +298,6 @@ class _DeviceReportState extends State<DeviceReport> {
   Widget build(BuildContext context) {
     Map<String, dynamic> args = ModalRoute.of(context).settings.arguments;
     _deviceInfo = args["deviceInfo"];
-    print('fk: '+_deviceInfo.category.toString());
     _fromDateTimeFilter = args["fromDateTime"];
     _toDateTimeFilter = args["toDateTime"];
     AppProvider appProvider = Provider.of<AppProvider>(context);
@@ -507,9 +537,7 @@ class _DeviceReportState extends State<DeviceReport> {
                   leading: FontAwesomeIcons.route,
                   title: Text('Route Interval'),
                   subtitle: Text(
-                    DateFormat.MMMd().add_jm().format(_fromDateTimeFilter).toString() +
-                        ' To ' +
-                        DateFormat.MMMd().add_jm().format(_toDateTimeFilter).toString(),
+                    DateFormat.MMMd().add_jm().format(_fromDateTimeFilter).toString() + ' To ' + DateFormat.MMMd().add_jm().format(_toDateTimeFilter).toString(),
                   ),
                 )
               : Text(''),

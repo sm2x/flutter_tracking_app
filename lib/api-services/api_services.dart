@@ -27,6 +27,7 @@ class TraccarClientService {
     var payLoad = Map<String, dynamic>();
     payLoad['email'] = username;
     payLoad['password'] = password;
+    print(jsonEncode(payLoad));
     var response = await _dio.post(url,
         data: payLoad,
         options: Options(
@@ -284,11 +285,7 @@ class TraccarClientService {
       var payLoad = jsonEncode({'deviceId': deviceId});
       var trackApiResponse = await http.post(
         monarchTrackApiUrl + '/misc/token',
-        headers: {
-          HttpHeaders.contentTypeHeader: 'application/json',
-          HttpHeaders.acceptHeader: 'application/json',
-          HttpHeaders.cookieHeader: rawCookie
-        },
+        headers: {HttpHeaders.contentTypeHeader: 'application/json', HttpHeaders.acceptHeader: 'application/json', HttpHeaders.cookieHeader: rawCookie},
         body: payLoad,
       );
       if (trackApiResponse != null) {

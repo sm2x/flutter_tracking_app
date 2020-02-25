@@ -119,10 +119,7 @@ class _LoginLayoutState extends State<Login> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                   child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.5), blurRadius: 1.5)]),
                     height: MediaQuery.of(context).size.height - 150,
                     child: ListView(
                       children: <Widget>[
@@ -225,6 +222,8 @@ class _LoginLayoutState extends State<Login> {
         setState(() => _loading = true);
         final username = userNameController.text;
         final password = passwordController.text;
+        print(username);
+        print(password);
         await TraccarClientService(appProvider: _appProvider).login(username: username, password: password);
         setState(() => _loading = false);
         await _appProvider.setLoggedIn(status: true);
