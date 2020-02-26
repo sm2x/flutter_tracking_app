@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tracking_app/animation/fadeAnimation.dart';
 import 'package:flutter_tracking_app/utilities/constants.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ContactUs extends StatefulWidget {
   @override
@@ -28,18 +29,50 @@ class _ContactUsState extends State<ContactUs> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            _googleMap(context),
-            _customAppBar(),
-            !hideContactInfo ? _contactInfo() : kEmptyWidget,
-          ],
-        ),
+        child: StreamBuilder(
+            stream: Firestore.instance.collection('contactInfo').snapshots(),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+              print(snapshot);
+              switch (snapshot.connectionState) {
+                case ConnectionState.none:
+                  return Text('No data');
+                case ConnectionState.waiting:
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                    ),
+                  );
+                case ConnectionState.active:
+                  // return ListView(
+                  //   children: snapshot.data.map((document) => Text(document['value'])),
+                  // );
+                  return Stack(
+                    children: <Widget>[
+                      _googleMap(context),
+                      _customAppBar(),
+                      !hideContactInfo ? _contactInfo(snapshot.data) : kEmptyWidget,
+                    ],
+                  );
+                  break;
+                case ConnectionState.done:
+                  return Stack(
+                    children: <Widget>[
+                      _googleMap(context),
+                      _customAppBar(),
+                      !hideContactInfo ? _contactInfo(snapshot.data) : kEmptyWidget,
+                    ],
+                  );
+                  break;
+              }
+              return null;
+            }),
       ),
     );
   }
 
-  Widget _contactInfo() {
+  Widget _contactInfo(data) {
+    print(data);
     var textStyle = TextStyle(color: Colors.black87, letterSpacing: 0.5, fontSize: 15);
     return Positioned(
       bottom: 25,
