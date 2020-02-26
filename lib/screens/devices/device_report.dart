@@ -88,7 +88,6 @@ class _DeviceReportState extends State<DeviceReport> {
               _lastUpdated = _lastPositionData.position.date.toLocal();
               _lastSpeed = _lastPositionData.position.geoPoint.speed;
               _setMapMarker(_lastPositionData, _deviceInfo);
-              _animateCameraPosition(_lastPositionData);
             }
           } catch (error) {
             _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Last Position Not Found'), duration: Duration(seconds: 3)));
@@ -105,16 +104,21 @@ class _DeviceReportState extends State<DeviceReport> {
 
   Future _onRefresh(DeviceCustomModel deviceInfo) async {
     _lastHours = _initialHours;
+    setState(() => _isLoading = true);
     await _getDeviceRoutesForReports(deviceInfo);
     if (_routesList.isNotEmpty) {
       _animateCameraPosition(_lastPositionData);
     }
+    // else {
+    //   await _getDevicePosition();
+    //   _animateCameraPosition(_lastPositionData);
+    // }
+    setState(() => _isLoading = false);
     _refreshController.refreshCompleted();
   }
 
   //Get DeviceRoutes for Reports Filter
   Future<void> _getDeviceRoutesForReports(DeviceCustomModel deviceInfo) async {
-    setState(() => _isLoading = true);
     Duration dateTimeDiff = _toDateTimeFilter.difference(_fromDateTimeFilter);
     List<Device> data = await TraccarClientService().getDeviceRoutes(
       date: _toDateTimeFilter,
@@ -133,13 +137,11 @@ class _DeviceReportState extends State<DeviceReport> {
         setState(() {});
       }
     } else {
-      await _getDevicePosition();
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         content: Text("No Activity Since ${dateTimeDiff.inHours} hrs"),
         duration: Duration(seconds: 3),
       ));
     }
-    setState(() => _isLoading = false);
   }
 
   //Get PolyLine points from routes
@@ -206,6 +208,7 @@ class _DeviceReportState extends State<DeviceReport> {
     GoogleMapController controller = await _mapController.future;
     controller
         .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: CommonFunctions.getLatLng(devicePosition.position.geoPoint), zoom: _zoomLevel, tilt: _camTilt, bearing: _camBearing)));
+    setState(() {});
   }
 
   //On Camera Move

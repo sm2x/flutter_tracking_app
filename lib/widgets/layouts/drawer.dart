@@ -55,6 +55,14 @@ class DrawerLayout extends StatelessWidget {
                     Share.share(kShareAppUrl, subject: kShareAppSubject);
                   },
                 ),
+                ListTile(
+                  leading: Icon(Icons.phone, color: Theme.of(context).primaryColor),
+                  title: Text('Contact Us'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/Contactus');
+                  },
+                ),
               ]),
             ),
             Divider(),

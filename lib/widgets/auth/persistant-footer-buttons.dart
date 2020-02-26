@@ -16,8 +16,7 @@ class FooterButtons {
           InkWell(
             child: Padding(
               padding: EdgeInsets.only(right: 20.0),
-              child: Text(kFooterHyperLinkText,
-                  style: GoogleFonts.parisienne(color: widgetsColor, fontSize: 20, fontWeight: FontWeight.w600)),
+              child: Text(kFooterHyperLinkText, style: TextStyle(color: widgetsColor, fontSize: 14, fontWeight: FontWeight.w600)),
             ),
             onTap: () {
               launch(kFooterHyperLinkUrl);

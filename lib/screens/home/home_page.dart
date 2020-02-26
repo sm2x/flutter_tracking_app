@@ -187,18 +187,13 @@ class _HomePageState extends State<HomePage> {
                             Divider(),
                             Text('Cell No: ' + _currentlySelectedPin.phone.toString(), style: textStyle),
                             SizedBox(height: 5),
-                            _currentlySelectedPin.category != null
-                                ? Text('Category: ' + _currentlySelectedPin.category, style: textStyle)
-                                : kEmptyWidget,
+                            _currentlySelectedPin.category != null ? Text('Category: ' + _currentlySelectedPin.category, style: textStyle) : kEmptyWidget,
                             SizedBox(height: 5),
                             _currentlySelectedPin.attributes != null
-                                ? Text('Odometer: ' + CommonFunctions.getOdometerString(odometer: _currentlySelectedPin.attributes.odometer),
-                                    style: textStyle)
+                                ? Text('Odometer: ' + CommonFunctions.getOdometerString(odometer: _currentlySelectedPin.attributes.odometer), style: textStyle)
                                 : kEmptyWidget,
                             SizedBox(height: 5),
-                            _currentlySelectedPin.attributes != null
-                                ? Text('Status: ' + CommonFunctions.getMotion(motion: _currentlySelectedPin.motion), style: textStyle)
-                                : kEmptyWidget,
+                            _currentlySelectedPin.attributes != null ? Text('Status: ' + CommonFunctions.getMotion(motion: _currentlySelectedPin.motion), style: textStyle) : kEmptyWidget,
                           ],
                         ),
                       )
@@ -276,7 +271,7 @@ class _HomePageState extends State<HomePage> {
                     SizedBox(width: 8),
                     Text(
                       kCompanyName,
-                      style: GoogleFonts.pacifico(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: 0.5, color: foreColor),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: foreColor),
                     ),
                   ],
                 ),

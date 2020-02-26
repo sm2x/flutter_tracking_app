@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tracking_app/models/location.dart';
 
 //top left-right circular
 BoxDecoration kBoxDecoration1(Color color) => BoxDecoration(
@@ -37,4 +38,8 @@ const kMonarchTrackCookieKey = 'monarchTrackSessionCookie';
 const kAppTitle = "MonarchTrack";
 Widget kEmptyWidget = Container(width: 0, height: 0);
 const kThemeContrastColor = Color(0xFF64b5f6);
-
+// const kOfficeLocation = {'latitude': 33.595001, 'longitude': 73.055568};
+LocationCustom kOfficeLocation = LocationCustom(latitude: 33.595001, longitude: 73.055568);
+const kOfficeEmail = 'monarchvehicletrack@gmail.com';
+const kOfficePhone = '(+92)309-8480001';
+const kOfficeAddress = 'Office# 03, 5th Floor, Rizwan Arcade, Opposite KFC, Saddar, Rawalpindi';
