@@ -208,8 +208,8 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
   //Animate CameraPosition
   void _animateCameraPosition(DeviceCustomModel devicePosition) async {
     GoogleMapController controller = await _mapController.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: CommonFunctions.getLatLng(devicePosition.position.geoPoint), zoom: _zoomLevel, tilt: _camTilt, bearing: _camBearing)));
+    controller
+        .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: CommonFunctions.getLatLng(devicePosition.position.geoPoint), zoom: _zoomLevel, tilt: _camTilt, bearing: _camBearing)));
   }
 
   //On Camera Move
@@ -290,7 +290,10 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                     }
                   }
                   return Container(
-                    child: LinearProgressIndicator(),
+                    child: SizedBox(
+                      child: LinearProgressIndicator(),
+                      height: 2.0,
+                    ),
                   );
                 }),
           );
@@ -606,9 +609,7 @@ class _DevicePositionScreenState extends State<DevicePositionScreen> {
                   leading: FontAwesomeIcons.route,
                   title: Text('Route Interval'),
                   subtitle: Text(
-                    DateFormat.jm().format(DateTime.now().subtract(Duration(hours: _lastHours))).toString() +
-                        ' To ' +
-                        DateFormat.jm().format(DateTime.now()).toString(),
+                    DateFormat.jm().format(DateTime.now().subtract(Duration(hours: _lastHours))).toString() + ' To ' + DateFormat.jm().format(DateTime.now()).toString(),
                   ),
                 )
               : Text(''),
